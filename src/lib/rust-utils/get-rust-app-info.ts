@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs'
+import path from 'path'
 import { parse } from '@iarna/toml'
 
 export type RustAppInfo = {
@@ -10,9 +11,7 @@ export type RustAppInfo = {
   }
 }
 
-export const parseCargoTomlFile = async (
-  cargoTomlPath: string
-): Promise<RustAppInfo> => {
+export const parseCargoTomlFile = async (cargoTomlPath: string): Promise<RustAppInfo> => {
   const toml = (await fs.readFile(cargoTomlPath)).toString('utf-8')
   const appInfo = parse(toml) as RustAppInfo
   return {
@@ -23,4 +22,10 @@ export const parseCargoTomlFile = async (
       edition: appInfo?.package?.edition || ''
     }
   }
+}
+
+const WELL_KNOWN_TAURI_CARGO_RELATIVE_PATH = path.join('src-tauri', 'Cargo.toml')
+
+export const parseTauriCargoTomlFileInContext = (contextPath: string): Promise<RustAppInfo> => {
+  return parseCargoTomlFile(path.join(contextPath, WELL_KNOWN_TAURI_CARGO_RELATIVE_PATH))
 }
