@@ -1,0 +1,6 @@
+[package]
+name = "demo-app"
+version = "0.0.18"
+description = "Just a demo app to unit test utils."
+authors = ["you"]
+edition = "2021"
