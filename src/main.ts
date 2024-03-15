@@ -1,5 +1,15 @@
 import * as core from '@actions/core'
 import { wait } from './wait'
+import { parseCargoTomlFile, parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
+
+export type ActionInputs = 'tauriContext'
+export type ActionOutputs = 'appName' | 'appVersion'
+
+const input = (name: ActionInputs, options: core.InputOptions = { required: true, trimWhitespace: true }) => core.getInput(name, options)
+
+const output = (name: ActionOutputs, value: any) => core.setOutput(name, value)
+
+const booleanInput = (name: ActionInputs) => core.getBooleanInput(name, { required: true })
 
 /**
  * The main function for the action.
@@ -7,18 +17,21 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const { GITHUB_TOKEN = '', GITHUB_REPOSITORY = '', GITHUB_SHA = '' } = process.env as GithubEnvVars
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    if (!GITHUB_TOKEN) {
+      core.setFailed('GITHUB_TOKEN is required')
+      return
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const [owner, repo] = GITHUB_REPOSITORY.split('/')
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const tauriContext = input('tauriContext')
+    // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
+    console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString())
+    const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
+    output('appName', appInfo.package.name)
+    output('appVersion', appInfo.package.version)
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
