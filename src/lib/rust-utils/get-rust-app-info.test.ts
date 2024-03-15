@@ -2,7 +2,7 @@ import { expect } from '@jest/globals'
 import { parseCargoTomlFile } from './get-rust-app-info'
 import path from 'path'
 
-describe('get-rust-app-info.ts', () => {
+describe('parseCargoTomlFile', () => {
   it('parses valid cargo file', async () => {
     const appData = await parseCargoTomlFile(
       path.join(__dirname, './test-files/ValidCargo.toml')
@@ -23,5 +23,13 @@ describe('get-rust-app-info.ts', () => {
     expect(appData.package.edition).toBe('')
     expect(appData.package.description).toBe('')
     expect(appData.package.version).toBe('')
+  })
+
+  it('returns rejected promise is passed a non-existent file', async () => {
+    await expect(
+      parseCargoTomlFile(
+        path.join(__dirname, './test-files/Non-Existent-Cargo.toml')
+      )
+    ).rejects.toThrow()
   })
 })
