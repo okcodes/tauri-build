@@ -27,6 +27,8 @@ outputs:
     description: 'Name of the app as defined in the "src-tauri/Cargo.toml" file.'
   appVersion:
     description: 'Version of the app as defined in the "src-tauri/Cargo.toml" file.'
+  tag:
+    description: 'Tag used in the GitHub release.'
 
 runs:
   using: node20
