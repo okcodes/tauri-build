@@ -25,6 +25,12 @@ let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
+const setAllValidRequiredEnvVars = () => {
+  test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+  test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
+  test_setEnvVar('GITHUB_SHA', '4a18826a13c84325ae24d2b7c83918159319c94d')
+}
+
 describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -50,9 +56,7 @@ describe('action', () => {
       }
     })
 
-    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
-    test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
-    test_setEnvVar('GITHUB_SHA', '4a18826a13c84325ae24d2b7c83918159319c94d')
+    setAllValidRequiredEnvVars()
     await main.run()
     expect(runMock).toHaveReturned()
 
@@ -60,6 +64,27 @@ describe('action', () => {
     expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
     expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
     expect(setFailedMock).not.toHaveBeenCalled()
+    expect(errorMock).not.toHaveBeenCalled()
+  })
+
+  it('called with invalid "tauriContext" data must fail', async () => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'tauriContext':
+          return path.join(__dirname, 'non-existent-dir')
+        default:
+          return ''
+      }
+    })
+
+    setAllValidRequiredEnvVars()
+    await main.run()
+    expect(runMock).toHaveReturned()
+
+    // Verify that all the core library functions were called correctly
+    expect(setOutputMock).not.toHaveBeenCalled()
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
     expect(errorMock).not.toHaveBeenCalled()
   })
 
