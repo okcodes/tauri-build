@@ -69,6 +69,32 @@ describe('action', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
     expect(errorMock).not.toHaveBeenCalled()
   })
+
+  it('called with no GITHUB_REPOSITORY must fail', async () => {
+    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY is required')
+    expect(errorMock).not.toHaveBeenCalled()
+  })
+
+  it('called with invalid GITHUB_REPOSITORY must fail', async () => {
+    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    test_setEnvVar('GITHUB_REPOSITORY', 'invalid')
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY must be called with the format owner/repo')
+    expect(errorMock).not.toHaveBeenCalled()
+  })
+
+  it('called with no GITHUB_SHA must fail', async () => {
+    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_SHA is required')
+    expect(errorMock).not.toHaveBeenCalled()
+  })
 })
 
 /*

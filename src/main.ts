@@ -24,7 +24,22 @@ export async function run(): Promise<void> {
       return
     }
 
+    if (!GITHUB_REPOSITORY) {
+      core.setFailed('GITHUB_REPOSITORY is required')
+      return
+    }
+
     const [owner, repo] = GITHUB_REPOSITORY.split('/')
+
+    if (!owner || !repo) {
+      core.setFailed('GITHUB_REPOSITORY must be called with the format owner/repo')
+      return
+    }
+
+    if (!GITHUB_SHA) {
+      core.setFailed('GITHUB_SHA is required')
+      return
+    }
 
     const tauriContext = input('tauriContext')
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
