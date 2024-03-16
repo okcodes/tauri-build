@@ -12,6 +12,7 @@ import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
 import { getBooleanInput } from '@actions/core'
+import * as createGithubRelease from '../src/lib/github-utils/create-github-release'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -26,6 +27,7 @@ let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof createGithubRelease.getOrCreateGitHubRelease>
 
 const setAllValidRequiredEnvVars = () => {
   test_setEnvVar('GITHUB_TOKEN', 'unit-test')
@@ -46,6 +48,7 @@ describe('action', () => {
     getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+    getOrCreateGitHubReleaseMock = jest.spyOn(createGithubRelease, 'getOrCreateGitHubRelease').mockImplementation()
   })
 
   it('called with correct data must succeed', async () => {

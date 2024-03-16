@@ -49,6 +49,7 @@ export async function run(): Promise<void> {
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString())
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagTemplate.replaceAll(/\{\{VERSION}}/g, appInfo.package.version)
+    await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
 
     output('appName', appInfo.package.name)
     output('appVersion', appInfo.package.version)
