@@ -10,7 +10,7 @@ import * as core from '@actions/core'
 import * as main from '../src/main'
 import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
-import { GithubRequiredEnvVars, test_resetRequiredEnvVars } from '../src/lib/github-utils/github-env-vars'
+import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -30,7 +30,7 @@ describe('action', () => {
     jest.clearAllMocks()
 
     // Unset all env vars
-    test_resetRequiredEnvVars()
+    test_deleteAllRequiredEnvVars()
 
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
@@ -50,9 +50,9 @@ describe('action', () => {
       }
     })
 
-    process.env['GITHUB_TOKEN' as GithubRequiredEnvVars] = 'unit-test'
-    process.env['GITHUB_REPOSITORY' as GithubRequiredEnvVars] = 'the-user/the-repo'
-    process.env['GITHUB_SHA' as GithubRequiredEnvVars] = '4a18826a13c84325ae24d2b7c83918159319c94d'
+    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
+    test_setEnvVar('GITHUB_SHA', '4a18826a13c84325ae24d2b7c83918159319c94d')
     await main.run()
     expect(runMock).toHaveReturned()
 

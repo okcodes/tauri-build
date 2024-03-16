@@ -24,6 +24,15 @@ export const getRequiredEnvVars = (): Record<GithubRequiredEnvVars, string> => {
  * Deletes all the required env vars from 'process.env'.
  * This function is only intended to be used for testing.
  */
-export const test_resetRequiredEnvVars = () => {
+export const test_deleteAllRequiredEnvVars = () => {
   Object.keys(getRequiredEnvVars()).forEach(key => delete process.env[key])
+}
+
+/**
+ * Sets an env var.
+ *
+ * This function is only intended to be used for testing.
+ */
+export const test_setEnvVar = (key: GithubRequiredEnvVars, value: string) => {
+  process.env[key] = value
 }
