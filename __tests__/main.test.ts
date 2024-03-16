@@ -63,7 +63,7 @@ describe('action', () => {
         case 'tauriContext':
           return path.join(__dirname, 'test-files')
         case 'tagTemplate':
-          return 'my-test-app-{{VERSION}}-and-{{VERSION}}'
+          return 'my-test-app-{VERSION}-and-{VERSION}'
         default:
           return ''
       }
