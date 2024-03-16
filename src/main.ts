@@ -1,11 +1,13 @@
 import * as core from '@actions/core'
 import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
+import { getOrCreateGitHubRelease } from './lib/github-utils/create-github-release'
 
-export type ActionInputs = 'tauriContext' | 'tagTemplate'
+export type ActionInputs = 'tauriContext' | 'tagTemplate' | 'prerelease' | 'draft'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
 
 const input = (name: ActionInputs, options: core.InputOptions) => core.getInput(name, options)
+const booleanInput = (name: ActionInputs, options: core.InputOptions) => core.getBooleanInput(name, options)
 const output = (name: ActionOutputs, value: any) => core.setOutput(name, value)
 
 /**
@@ -40,6 +42,8 @@ export async function run(): Promise<void> {
 
     const tauriContext = input('tauriContext', { required: true, trimWhitespace: true })
     const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
+    const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
+    const draft = booleanInput('draft', { required: true, trimWhitespace: true })
 
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString())

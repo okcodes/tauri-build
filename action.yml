@@ -14,6 +14,12 @@ inputs:
   tagTemplate:
     description: 'Template to generate the tag name of the release. It will interpolate the string "{{VERSION}}" with the app version defined in "src-tauri/Cargo.toml".'
     required: true
+  prerelease:
+    description: 'If the GitHub release to create should be marked as prerelease.'
+    required: true
+  draft:
+    description: 'If the GitHub release to create should be marked as draft.'
+    required: true
 
 # Define your outputs here.
 outputs:

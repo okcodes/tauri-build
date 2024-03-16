@@ -11,6 +11,7 @@ import * as main from '../src/main'
 import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
+import { getBooleanInput } from '@actions/core'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -22,6 +23,7 @@ const timeRegex = /^\d{2}:\d{2}:\d{2}/
 let debugMock: jest.SpiedFunction<typeof core.debug>
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
+let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
@@ -41,6 +43,7 @@ describe('action', () => {
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+    getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
@@ -55,6 +58,16 @@ describe('action', () => {
           return 'my-test-app-{{VERSION}}-and-{{VERSION}}'
         default:
           return ''
+      }
+    })
+    getBooleanInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'prerelease':
+          return true
+        case 'draft':
+          return false
+        default:
+          return false
       }
     })
 
