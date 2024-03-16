@@ -11,7 +11,6 @@ import * as main from '../src/main'
 import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
-import { getBooleanInput } from '@actions/core'
 import * as createGithubRelease from '../src/lib/github-utils/create-github-release'
 
 // Mock the action's main function
@@ -29,10 +28,16 @@ let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof createGithubRelease.getOrCreateGitHubRelease>
 
+const THE_GITHUB_TOKEN = 'unit-test-token'
+const THE_GITHUB_OWNER = 'the-owner'
+const THE_GITHUB_REPO = 'the-repo'
+const THE_GITHUB_REPOSITORY = `${THE_GITHUB_OWNER}/${THE_GITHUB_REPO}`
+const THE_GITHUB_SHA = '4a18826a13c84325ae24d2b7c83918159319c94d'
+
 const setAllValidRequiredEnvVars = () => {
-  test_setEnvVar('GITHUB_TOKEN', 'unit-test')
-  test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
-  test_setEnvVar('GITHUB_SHA', '4a18826a13c84325ae24d2b7c83918159319c94d')
+  test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
+  test_setEnvVar('GITHUB_REPOSITORY', THE_GITHUB_REPOSITORY)
+  test_setEnvVar('GITHUB_SHA', THE_GITHUB_SHA)
 }
 
 describe('action', () => {
@@ -82,6 +87,15 @@ describe('action', () => {
     expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
     expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
     expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, 'my-test-app-7.7.7-and-7.7.7')
+    expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, {
+      githubToken: THE_GITHUB_TOKEN,
+      repo: THE_GITHUB_REPO,
+      owner: THE_GITHUB_OWNER,
+      tag: 'my-test-app-7.7.7-and-7.7.7',
+      sha: THE_GITHUB_SHA,
+      prerelease: true,
+      draft: false,
+    })
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
@@ -110,14 +124,14 @@ describe('action', () => {
   })
 
   it('called with no GITHUB_REPOSITORY must fail', async () => {
-    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY is required')
   })
 
   it('called with invalid GITHUB_REPOSITORY must fail', async () => {
-    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
+    test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
     test_setEnvVar('GITHUB_REPOSITORY', 'invalid')
     await main.run()
     expect(runMock).toHaveReturned()
@@ -125,8 +139,8 @@ describe('action', () => {
   })
 
   it('called with no GITHUB_SHA must fail', async () => {
-    test_setEnvVar('GITHUB_TOKEN', 'unit-test')
-    test_setEnvVar('GITHUB_REPOSITORY', 'the-user/the-repo')
+    test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
+    test_setEnvVar('GITHUB_REPOSITORY', THE_GITHUB_REPOSITORY)
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_SHA is required')
