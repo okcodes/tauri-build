@@ -11,7 +11,7 @@ import * as main from '../src/main'
 import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
-import * as createGithubRelease from '../src/lib/github-utils/create-github-release'
+import * as githubRelease from '../src/lib/github-utils/github-release'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -26,7 +26,7 @@ let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
-let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof createGithubRelease.getOrCreateGitHubRelease>
+let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof githubRelease.getOrCreateGitHubRelease>
 
 const THE_GITHUB_TOKEN = 'unit-test-token'
 const THE_GITHUB_OWNER = 'the-owner'
@@ -53,7 +53,7 @@ describe('action', () => {
     getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-    getOrCreateGitHubReleaseMock = jest.spyOn(createGithubRelease, 'getOrCreateGitHubRelease').mockImplementation()
+    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockImplementation()
   })
 
   it('called with correct data must succeed', async () => {

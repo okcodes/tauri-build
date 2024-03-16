@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
-import { getOrCreateGitHubRelease } from './lib/github-utils/create-github-release'
+import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 
 export type ActionInputs = 'tauriContext' | 'tagTemplate' | 'prerelease' | 'draft'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
