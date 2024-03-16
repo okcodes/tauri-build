@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
-import { parseCargoTomlFile, parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
+import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
+import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 
 export type ActionInputs = 'tauriContext'
 export type ActionOutputs = 'appName' | 'appVersion'
@@ -17,7 +17,7 @@ const booleanInput = (name: ActionInputs) => core.getBooleanInput(name, { requir
  */
 export async function run(): Promise<void> {
   try {
-    const { GITHUB_TOKEN = '', GITHUB_REPOSITORY = '', GITHUB_SHA = '' } = process.env as GithubEnvVars
+    const { GITHUB_TOKEN = '', GITHUB_REPOSITORY = '', GITHUB_SHA = '' } = getRequiredEnvVars()
 
     if (!GITHUB_TOKEN) {
       core.setFailed('GITHUB_TOKEN is required')

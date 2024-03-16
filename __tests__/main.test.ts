@@ -10,6 +10,7 @@ import * as core from '@actions/core'
 import * as main from '../src/main'
 import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
+import { GithubRequiredEnvVars, test_resetRequiredEnvVars } from '../src/lib/github-utils/github-env-vars'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -23,9 +24,13 @@ let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+
 describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Unset all env vars
+    test_resetRequiredEnvVars()
 
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
@@ -34,7 +39,7 @@ describe('action', () => {
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
 
-  it('sets the time output', async () => {
+  it('called with correct data must succeed', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
@@ -45,15 +50,23 @@ describe('action', () => {
       }
     })
 
-    process.env.GITHUB_TOKEN = 'unit-test'
-    process.env.GITHUB_REPOSITORY = 'the-user/the-repo'
-    process.env.GITHUB_SHA = '4a18826a13c84325ae24d2b7c83918159319c94d'
+    process.env['GITHUB_TOKEN' as GithubRequiredEnvVars] = 'unit-test'
+    process.env['GITHUB_REPOSITORY' as GithubRequiredEnvVars] = 'the-user/the-repo'
+    process.env['GITHUB_SHA' as GithubRequiredEnvVars] = '4a18826a13c84325ae24d2b7c83918159319c94d'
     await main.run()
     expect(runMock).toHaveReturned()
 
     // Verify that all the core library functions were called correctly
     expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
     expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
+    expect(setFailedMock).not.toHaveBeenCalled()
+    expect(errorMock).not.toHaveBeenCalled()
+  })
+
+  it('called with no GITHUB_TOKEN must fail', async () => {
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
     expect(errorMock).not.toHaveBeenCalled()
   })
 })
