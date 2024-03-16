@@ -10,16 +10,16 @@ const appInfo: RustAppInfo = {
   },
 }
 
-const now = new Date('2024-03-16T10:05:30Z')
+const date = new Date('2024-03-16T10:05:30Z')
 
 describe('tagNameFromTemplate', () => {
   test.each([
-    ['{NAME}-v{VERSION}-alpha-{DATE_ISO_8601}-{SHORT_SHA}', now, 'abcdef1234567890', appInfo, 'my-app-v1.0.0-alpha-2024-03-16T10-05-30Z-abcdef1'],
-    ['{NAME}-v{VERSION}', now, 'abcdef1234567890', appInfo, 'my-app-v1.0.0'],
-    ['my-tag', now, 'abcdef1234567890', appInfo, 'my-tag'],
-    ['{NAME}-{VERSION}-{DATE_ISO_8601}-{SHORT_SHA}--{NAME}-{VERSION}-{DATE_ISO_8601}-{SHORT_SHA}', now, 'abcdef1234567890', appInfo, 'my-app-1.0.0-2024-03-16T10-05-30Z-abcdef1--my-app-1.0.0-2024-03-16T10-05-30Z-abcdef1'],
+    ['{NAME}-v{VERSION}-alpha-{DATE_ISO_8601}-{SHORT_SHA}', date, 'abcdef1234567890', appInfo, 'my-app-v1.0.0-alpha-2024-03-16T10-05-30Z-abcdef1'],
+    ['{NAME}-v{VERSION}', date, 'abcdef1234567890', appInfo, 'my-app-v1.0.0'],
+    ['my-tag', date, 'abcdef1234567890', appInfo, 'my-tag'],
+    ['{NAME}-{VERSION}-{DATE_ISO_8601}-{SHORT_SHA}--{NAME}-{VERSION}-{DATE_ISO_8601}-{SHORT_SHA}', date, 'abcdef1234567890', appInfo, 'my-app-1.0.0-2024-03-16T10-05-30Z-abcdef1--my-app-1.0.0-2024-03-16T10-05-30Z-abcdef1'],
   ])('correctly formats tag name from template "%s"', (template, now, gitSha, appInfo: RustAppInfo, expected) => {
-    const result = tagNameFromTemplate({ template, appInfo, now, gitSha })
+    const result = tagNameFromTemplate(template, { appInfo, date, gitSha })
     expect(result).toBe(expected)
   })
 })
