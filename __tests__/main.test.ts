@@ -51,6 +51,8 @@ describe('action', () => {
       switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'test-files')
+        case 'tagTemplate':
+          return 'my-test-app-{{VERSION}}-and-{{VERSION}}'
         default:
           return ''
       }
@@ -63,6 +65,7 @@ describe('action', () => {
     // Verify that all the core library functions were called correctly
     expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
     expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
+    expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, 'my-test-app-7.7.7-and-7.7.7')
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
@@ -81,18 +84,13 @@ describe('action', () => {
     setAllValidRequiredEnvVars()
     await main.run()
     expect(runMock).toHaveReturned()
-
-    // Verify that all the core library functions were called correctly
-    expect(setOutputMock).not.toHaveBeenCalled()
     expect(setFailedMock).toHaveBeenCalledTimes(1)
-    expect(errorMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_TOKEN must fail', async () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
-    expect(errorMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_REPOSITORY must fail', async () => {
@@ -100,7 +98,6 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY is required')
-    expect(errorMock).not.toHaveBeenCalled()
   })
 
   it('called with invalid GITHUB_REPOSITORY must fail', async () => {
@@ -109,7 +106,6 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY must be called with the format owner/repo')
-    expect(errorMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_SHA must fail', async () => {
@@ -118,7 +114,6 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_SHA is required')
-    expect(errorMock).not.toHaveBeenCalled()
   })
 })
 

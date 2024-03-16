@@ -2,11 +2,10 @@ import * as core from '@actions/core'
 import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 
-export type ActionInputs = 'tauriContext'
-export type ActionOutputs = 'appName' | 'appVersion'
+export type ActionInputs = 'tauriContext' | 'tagTemplate'
+export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
 
-const input = (name: ActionInputs, options: core.InputOptions = { required: true, trimWhitespace: true }) => core.getInput(name, options)
-
+const input = (name: ActionInputs, options: core.InputOptions) => core.getInput(name, options)
 const output = (name: ActionOutputs, value: any) => core.setOutput(name, value)
 
 /**
@@ -39,12 +38,17 @@ export async function run(): Promise<void> {
       return
     }
 
-    const tauriContext = input('tauriContext')
+    const tauriContext = input('tauriContext', { required: true, trimWhitespace: true })
+    const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
+
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString())
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
+    const tag = tagTemplate.replaceAll(/\{\{VERSION}}/g, appInfo.package.version)
+
     output('appName', appInfo.package.name)
     output('appVersion', appInfo.package.version)
+    output('tag', tag)
   } catch (error) {
     // Fail the workflow run if an error occurs
     core.setFailed((error as Error).message)
