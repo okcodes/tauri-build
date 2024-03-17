@@ -31173,12 +31173,11 @@ const date_format_1 = __nccwpck_require__(8894);
  * - `{DATE_ISO_8601}`: Replaced with the date provided in the `@param {Date} now` parameter, formatted in ISO 8601 format suitable for filenames.
  * - `{SHORT_SHA}`: Replaced with the first 7 characters of the Git SHA.
  *
- * @param {string} template The template string containing placeholders for tag generation.
+ * @param {string} template The template string containing placeholders for tag generation, e.g., "{NAME}-v{VERSION}-alpha-{DATE_ISO_8601}-{SHORT_SHA}".
  * @param {TagData} params Data used to replace the template placeholders.
  * @returns {string} The generated tag name with placeholders replaced by specific values.
  */
 const tagNameFromTemplate = (template, { appInfo, date, gitSha }) => {
-    // It can be used for example with this template: "{NAME}-v{VERSION}-alpha-{DATE_ISO_8601}-{SHORT_SHA}".
     return template
         .replaceAll(/\{VERSION}/g, appInfo.package.version)
         .replaceAll(/\{NAME}/g, appInfo.package.name)
@@ -31225,6 +31224,23 @@ exports.parseTauriCargoTomlFileInContext = parseTauriCargoTomlFileInContext;
 
 /***/ }),
 
+/***/ 6475:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.build = void 0;
+const build = async () => {
+    const { execa } = await __nccwpck_require__.e(/* import() */ 463).then(__nccwpck_require__.bind(__nccwpck_require__, 7463));
+    const cwd = await execa('pwd', []);
+    console.log('Testing execa', { cwd });
+};
+exports.build = build;
+
+
+/***/ }),
+
 /***/ 399:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -31260,6 +31276,8 @@ const get_rust_app_info_1 = __nccwpck_require__(3193);
 const github_env_vars_1 = __nccwpck_require__(3908);
 const github_release_1 = __nccwpck_require__(2535);
 const tag_template_1 = __nccwpck_require__(3190);
+const tauri_builder_1 = __nccwpck_require__(6475);
+const version_1 = __nccwpck_require__(1946);
 const input = (name, options) => core.getInput(name, options);
 const booleanInput = (name, options) => core.getBooleanInput(name, options);
 const output = (name, value) => core.setOutput(name, value);
@@ -31268,6 +31286,7 @@ const output = (name, value) => core.setOutput(name, value);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
+    console.log(`Running tauri-release-action v${version_1.VERSION}`);
     try {
         const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA } = (0, github_env_vars_1.getRequiredEnvVars)();
         if (!GITHUB_TOKEN) {
@@ -31296,6 +31315,7 @@ async function run() {
         const appInfo = await (0, get_rust_app_info_1.parseTauriCargoTomlFileInContext)(tauriContext);
         const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, date: new Date(), gitSha: GITHUB_SHA });
         await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
+        await (0, tauri_builder_1.build)();
         output('appName', appInfo.package.name);
         output('appVersion', appInfo.package.version);
         output('tag', tag);
@@ -31306,6 +31326,18 @@ async function run() {
     }
 }
 exports.run = run;
+
+
+/***/ }),
+
+/***/ 1946:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.VERSION = void 0;
+exports.VERSION = '0.0.0';
 
 
 /***/ }),
@@ -31331,6 +31363,14 @@ module.exports = require("async_hooks");
 
 "use strict";
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ 2081:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
 
 /***/ }),
 
@@ -31406,6 +31446,22 @@ module.exports = require("net");
 
 /***/ }),
 
+/***/ 2254:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:buffer");
+
+/***/ }),
+
+/***/ 7718:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:child_process");
+
+/***/ }),
+
 /***/ 5673:
 /***/ ((module) => {
 
@@ -31414,11 +31470,59 @@ module.exports = require("node:events");
 
 /***/ }),
 
+/***/ 7561:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs");
+
+/***/ }),
+
+/***/ 612:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:os");
+
+/***/ }),
+
+/***/ 9411:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:path");
+
+/***/ }),
+
+/***/ 7742:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:process");
+
+/***/ }),
+
 /***/ 4492:
 /***/ ((module) => {
 
 "use strict";
 module.exports = require("node:stream");
+
+/***/ }),
+
+/***/ 9397:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:timers/promises");
+
+/***/ }),
+
+/***/ 1041:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:url");
 
 /***/ }),
 
@@ -33199,10 +33303,105 @@ module.exports = parseParams
 /******/ 		return module.exports;
 /******/ 	}
 /******/ 	
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__nccwpck_require__.m = __webpack_modules__;
+/******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/ensure chunk */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.f = {};
+/******/ 		// This file contains only the entry chunk.
+/******/ 		// The chunk loading function for additional chunks
+/******/ 		__nccwpck_require__.e = (chunkId) => {
+/******/ 			return Promise.all(Object.keys(__nccwpck_require__.f).reduce((promises, key) => {
+/******/ 				__nccwpck_require__.f[key](chunkId, promises);
+/******/ 				return promises;
+/******/ 			}, []));
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/get javascript chunk filename */
+/******/ 	(() => {
+/******/ 		// This function allow to reference async chunks
+/******/ 		__nccwpck_require__.u = (chunkId) => {
+/******/ 			// return url for filenames based on template
+/******/ 			return "" + chunkId + ".index.js";
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/******/ 	/* webpack/runtime/require chunk loading */
+/******/ 	(() => {
+/******/ 		// no baseURI
+/******/ 		
+/******/ 		// object to store loaded chunks
+/******/ 		// "1" means "loaded", otherwise not loaded yet
+/******/ 		var installedChunks = {
+/******/ 			179: 1
+/******/ 		};
+/******/ 		
+/******/ 		// no on chunks loaded
+/******/ 		
+/******/ 		var installChunk = (chunk) => {
+/******/ 			var moreModules = chunk.modules, chunkIds = chunk.ids, runtime = chunk.runtime;
+/******/ 			for(var moduleId in moreModules) {
+/******/ 				if(__nccwpck_require__.o(moreModules, moduleId)) {
+/******/ 					__nccwpck_require__.m[moduleId] = moreModules[moduleId];
+/******/ 				}
+/******/ 			}
+/******/ 			if(runtime) runtime(__nccwpck_require__);
+/******/ 			for(var i = 0; i < chunkIds.length; i++)
+/******/ 				installedChunks[chunkIds[i]] = 1;
+/******/ 		
+/******/ 		};
+/******/ 		
+/******/ 		// require() chunk loading for javascript
+/******/ 		__nccwpck_require__.f.require = (chunkId, promises) => {
+/******/ 			// "1" is the signal for "already loaded"
+/******/ 			if(!installedChunks[chunkId]) {
+/******/ 				if(true) { // all chunks have JS
+/******/ 					installChunk(require("./" + __nccwpck_require__.u(chunkId)));
+/******/ 				} else installedChunks[chunkId] = 1;
+/******/ 			}
+/******/ 		};
+/******/ 		
+/******/ 		// no external install chunk
+/******/ 		
+/******/ 		// no HMR
+/******/ 		
+/******/ 		// no HMR manifest
+/******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
