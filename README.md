@@ -14,6 +14,20 @@ publishing, and versioning guidance.
 If you are new, there's also a simpler introduction in the
 [Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
 
+## Run Unit Tests
+
+Make sure you declare this env var to run your tests. It's required to run code with dynamic imports.
+
+```shell
+NODE_OPTIONS=--experimental-vm-modules
+```
+
+For example, this is a dynamic import:
+
+```javascript
+const { execa } = await import('execa')
+```
+
 ## Create Your Own Action
 
 To create your own action, you can use this repository as a template! Just

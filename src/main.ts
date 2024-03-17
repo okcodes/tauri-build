@@ -3,6 +3,8 @@ import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { tagNameFromTemplate } from './lib/github-utils/tag-template'
+import { build } from './lib/tauri-builder/tauri-builder'
+import { VERSION } from './version'
 
 export type ActionInputs = 'tauriContext' | 'tagTemplate' | 'prerelease' | 'draft'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
@@ -16,6 +18,7 @@ const output = (name: ActionOutputs, value: any) => core.setOutput(name, value)
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
+  console.log(`Running tauri-release-action v${VERSION}`)
   try {
     const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA } = getRequiredEnvVars()
 
@@ -51,6 +54,7 @@ export async function run(): Promise<void> {
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, date: new Date(), gitSha: GITHUB_SHA })
     await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
+    await build()
 
     output('appName', appInfo.package.name)
     output('appVersion', appInfo.package.version)
