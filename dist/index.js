@@ -31002,28 +31002,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 8894:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.toISO8601ForFilename = void 0;
-const toISO8601ForFilename = (date) => {
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // getUTCMonth() returns 0-11
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-    // Constructing the format: YYYY-MM-DDTHH-MM-SSZ
-    return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}Z`;
-};
-exports.toISO8601ForFilename = toISO8601ForFilename;
-
-
-/***/ }),
-
 /***/ 3908:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -31156,13 +31134,12 @@ exports.getOrCreateGitHubRelease = getOrCreateGitHubRelease;
 /***/ }),
 
 /***/ 3190:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.tagNameFromTemplate = void 0;
-const date_format_1 = __nccwpck_require__(8894);
 /**
  * Generates a tag name by formatting a template string with values derived from a Rust application's info,
  * a specific date, and a Git SHA.
@@ -31170,18 +31147,16 @@ const date_format_1 = __nccwpck_require__(8894);
  * Supported placeholders for the template include:
  * - `{VERSION}`: Replaced with the application version.
  * - `{NAME}`: Replaced with the application name.
- * - `{DATE_ISO_8601}`: Replaced with the date provided in the `@param {Date} now` parameter, formatted in ISO 8601 format suitable for filenames.
  * - `{SHORT_SHA}`: Replaced with the first 7 characters of the Git SHA.
  *
- * @param {string} template The template string containing placeholders for tag generation, e.g., "{NAME}-v{VERSION}-alpha-{DATE_ISO_8601}-{SHORT_SHA}".
+ * @param {string} template The template string containing placeholders for tag generation, e.g., "{NAME}-v{VERSION}+{SHORT_SHA}".
  * @param {TagData} params Data used to replace the template placeholders.
  * @returns {string} The generated tag name with placeholders replaced by specific values.
  */
-const tagNameFromTemplate = (template, { appInfo, date, gitSha }) => {
+const tagNameFromTemplate = (template, { appInfo, gitSha }) => {
     return template
         .replaceAll(/\{VERSION}/g, appInfo.package.version)
         .replaceAll(/\{NAME}/g, appInfo.package.name)
-        .replaceAll(/\{DATE_ISO_8601}/g, (0, date_format_1.toISO8601ForFilename)(date))
         .replaceAll(/\{SHORT_SHA}/g, gitSha.substring(0, 7));
 };
 exports.tagNameFromTemplate = tagNameFromTemplate;
@@ -31313,7 +31288,7 @@ async function run() {
         // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
         console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString());
         const appInfo = await (0, get_rust_app_info_1.parseTauriCargoTomlFileInContext)(tauriContext);
-        const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, date: new Date(), gitSha: GITHUB_SHA });
+        const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA });
         await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
         await (0, tauri_builder_1.build)();
         output('appName', appInfo.package.name);
