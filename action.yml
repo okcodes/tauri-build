@@ -11,6 +11,9 @@ inputs:
   tauriContext:
     description: 'Folder to the source code of the app. A file "src-tauri/Cargo.toml" must exist inside that folder.'
     required: true
+  buildOptions:
+    description: Options sent to the tauri build command. E.g., "--target aarch64-apple-darwin --bundles 'app,dmg,updater'". Run "pnpm run build --help" for more info.
+    required: true
   tagTemplate:
     description: 'Template to generate the tag name of the release. It will interpolate the string "{{VERSION}}" with the app version defined in "src-tauri/Cargo.toml".'
     required: true

@@ -1,4 +1,4 @@
-export const executeCommand = async (binary: string, args: string[]): Promise<{ stdout: string; stderr: string }> => {
+export const executeCommand = async (file: string, args?: readonly string[], options?: { cwd?: string }): Promise<{ stdout: string; stderr: string }> => {
   const { execa } = await import('execa')
-  return execa(binary, args)
+  return execa(file, args, options)
 }

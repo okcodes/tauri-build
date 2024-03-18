@@ -6,7 +6,7 @@ import { tagNameFromTemplate } from './lib/github-utils/tag-template'
 import { build } from './lib/tauri-utils/tauri-builder'
 import { VERSION } from './version'
 
-export type ActionInputs = 'tauriContext' | 'tagTemplate' | 'prerelease' | 'draft'
+export type ActionInputs = 'tauriContext' | 'buildOptions' | 'tagTemplate' | 'prerelease' | 'draft'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
 
 const input = (name: ActionInputs, options: core.InputOptions) => core.getInput(name, options)
@@ -45,6 +45,7 @@ export async function run(): Promise<void> {
     }
 
     const tauriContext = input('tauriContext', { required: true, trimWhitespace: true })
+    const buildOptions = input('buildOptions', { required: false, trimWhitespace: true })
     const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
     const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
     const draft = booleanInput('draft', { required: true, trimWhitespace: true })
@@ -54,7 +55,7 @@ export async function run(): Promise<void> {
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
     await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
-    await build(tauriContext)
+    await build(tauriContext, buildOptions)
 
     output('appName', appInfo.package.name)
     output('appVersion', appInfo.package.version)
