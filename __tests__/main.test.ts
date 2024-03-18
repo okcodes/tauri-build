@@ -119,12 +119,20 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenCalledTimes(1)
+
+    // Core function not called
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_TOKEN must fail', async () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
+
+    // Core function not called
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_REPOSITORY must fail', async () => {
@@ -132,6 +140,10 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY is required')
+
+    // Core function not called
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildMock).not.toHaveBeenCalled()
   })
 
   it('called with invalid GITHUB_REPOSITORY must fail', async () => {
@@ -148,6 +160,10 @@ describe('action', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_SHA is required')
+
+    // Core function not called
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildMock).not.toHaveBeenCalled()
   })
 })
 
