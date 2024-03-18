@@ -31068,44 +31068,20 @@ exports.test_setEnvVar = test_setEnvVar;
 /***/ }),
 
 /***/ 2535:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createGitHubRelease = exports.getOrCreateGitHubRelease = void 0;
+exports.getOrCreateGitHubRelease = void 0;
 const rest_1 = __nccwpck_require__(5375);
-const core = __importStar(__nccwpck_require__(2186));
 const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
+    const octokit = new rest_1.Octokit({ auth: githubToken });
     try {
         // First try to get release by tag. If not found, create it.
-        core.debug(`Will get existing release with tag "${tag}"`);
-        const octokit = new rest_1.Octokit({ auth: githubToken });
+        console.log(`Will get existing release with tag "${tag}"`);
         const existingRelease = await octokit.repos.getReleaseByTag({ owner, repo, tag });
-        core.debug(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`);
+        console.log(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`);
     }
     catch (getReleaseError) {
         // If error is not 404, it's an unknown error.
@@ -31113,54 +31089,21 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
             throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${getReleaseError.message}`, { cause: getReleaseError });
         }
         // Release not found, create it.
-        core.debug(`Release with tag "${tag}" not found.`);
-        await (0, exports.createGitHubRelease)({ githubToken, repo, owner, tag, sha, prerelease, draft });
+        console.log(`Release with tag "${tag}" not found. Will create it.`);
+        const createReleaseResponse = await octokit.repos.createRelease({
+            owner,
+            repo,
+            tag_name: tag,
+            target_commitish: sha,
+            name: `Release ${tag}`,
+            body: `Tag \`${tag}\``,
+            draft,
+            prerelease,
+        });
+        console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
     }
 };
 exports.getOrCreateGitHubRelease = getOrCreateGitHubRelease;
-const createGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
-    core.debug(`Will create will release with tag "${tag}" it.`);
-    const octokit = new rest_1.Octokit({ auth: githubToken });
-    // Create tag manually so it get signed.
-    try {
-        console.log(`Will create tag "${tag}" in commit "${sha}"`);
-        const createTagResponse = await octokit.git.createTag({
-            owner,
-            repo,
-            tag,
-            message: tag,
-            object: sha,
-            type: 'commit',
-        });
-        console.log(`Did create tag "${tag}" in commit "${sha}". Tag sha: "${createTagResponse.data.sha}".`);
-        // Create a reference for the tag
-        console.log(`Will create reference to tag "${tag}".`);
-        const referenceResponse = await octokit.git.createRef({
-            owner,
-            repo,
-            ref: `refs/tags/${tag}`,
-            sha: createTagResponse.data.sha, // Is this sha different from the commit sha?
-        });
-        console.log(`Did create reference to tag "${tag}".`, referenceResponse);
-    }
-    catch (createTagError) {
-        console.error(`Cannot create tag "${tag}" on commit "${sha}": ${createTagError.message}`, createTagError);
-        // Don't throw. Creating a tag is not required, if a release is created the tag is created automatically.
-        // The manual tag creation is just for creating a signed tag but that's not a required step.
-    }
-    const createReleaseResponse = await octokit.repos.createRelease({
-        owner,
-        repo,
-        tag_name: tag,
-        target_commitish: sha,
-        name: `Release ${tag}`,
-        body: `# Release \`${tag}\``,
-        draft,
-        prerelease,
-    });
-    console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
-};
-exports.createGitHubRelease = createGitHubRelease;
 
 
 /***/ }),
@@ -31232,18 +31175,39 @@ exports.parseTauriCargoTomlFileInContext = parseTauriCargoTomlFileInContext;
 /***/ }),
 
 /***/ 6475:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.build = void 0;
-const build = async () => {
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const build = async (tauriContext) => {
     const { execa } = await __nccwpck_require__.e(/* import() */ 463).then(__nccwpck_require__.bind(__nccwpck_require__, 7463));
-    const cwd = await execa('pwd', []);
-    console.log('Testing execa', { cwd });
+    const packageManager = getPackageManager(tauriContext);
+    const { stdout, stderr } = await execa(packageManager, ['install']);
+    console.log('Testing execa', { stdout, stderr });
 };
 exports.build = build;
+const usesPnpm = (tauriContext) => {
+    return fs_1.default.existsSync(path_1.default.join(tauriContext, 'pnpm-lock.yaml'));
+};
+const usesYarn = (tauriContext) => {
+    return fs_1.default.existsSync(path_1.default.join(tauriContext, 'yarn.lock'));
+};
+const getPackageManager = (tauriContext) => {
+    if (usesPnpm(tauriContext)) {
+        return 'pnpm';
+    }
+    if (usesYarn(tauriContext)) {
+        return 'yarn';
+    }
+    return 'npm';
+};
 
 
 /***/ }),
@@ -31322,7 +31286,7 @@ async function run() {
         const appInfo = await (0, get_rust_app_info_1.parseTauriCargoTomlFileInContext)(tauriContext);
         const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA });
         await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
-        await (0, tauri_builder_1.build)();
+        await (0, tauri_builder_1.build)(tauriContext);
         output('appName', appInfo.package.name);
         output('appVersion', appInfo.package.version);
         output('tag', tag);
