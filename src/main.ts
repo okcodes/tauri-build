@@ -3,7 +3,7 @@ import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { tagNameFromTemplate } from './lib/github-utils/tag-template'
-import { build } from './lib/tauri-builder/tauri-builder'
+import { build } from './lib/tauri-utils/tauri-builder'
 import { VERSION } from './version'
 
 export type ActionInputs = 'tauriContext' | 'tagTemplate' | 'prerelease' | 'draft'
