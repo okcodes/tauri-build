@@ -65,6 +65,8 @@ describe('run', () => {
       switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'test-files')
+        case 'buildOptions':
+          return "     --target  aarch64-apple-darwin   --bundles   'app,dmg,updater'   "
         case 'tagTemplate':
           return 'my-test-app-{VERSION}-and-{VERSION}'
         default:
@@ -99,7 +101,7 @@ describe('run', () => {
       prerelease: true,
       draft: false,
     })
-    expect(buildMock).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'))
+    expect(buildMock).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), "     --target  aarch64-apple-darwin   --bundles   'app,dmg,updater'   ")
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
