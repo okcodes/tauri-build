@@ -8,7 +8,8 @@ describe('action', () => {
   })
 
   it('called with correct data must succeed', async () => {
-    await tauriBuilder.build()
+    await tauriBuilder.build('.')
+    // Mock so I don't call the pnpm install, here and everywhere the build command is called like in main.test.ts
     expect(buildMock).toHaveReturned()
   })
 })

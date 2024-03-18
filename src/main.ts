@@ -54,7 +54,7 @@ export async function run(): Promise<void> {
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
     await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
-    await build()
+    await build(tauriContext)
 
     output('appName', appInfo.package.name)
     output('appVersion', appInfo.package.version)
