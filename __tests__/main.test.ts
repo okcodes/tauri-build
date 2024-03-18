@@ -12,6 +12,7 @@ import { ActionInputs, ActionOutputs } from '../src/main'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
 import * as githubRelease from '../src/lib/github-utils/github-release'
+import * as tauriBuilder from '../src/lib/tauri-utils/tauri-builder'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -27,6 +28,7 @@ let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof githubRelease.getOrCreateGitHubRelease>
+let buildMock: jest.SpiedFunction<typeof tauriBuilder.build>
 
 const THE_GITHUB_TOKEN = 'unit-test-token'
 const THE_GITHUB_OWNER = 'the-owner'
@@ -54,6 +56,7 @@ describe('action', () => {
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockImplementation()
+    buildMock = jest.spyOn(tauriBuilder, 'build').mockImplementation()
   })
 
   it('called with correct data must succeed', async () => {
@@ -96,6 +99,7 @@ describe('action', () => {
       prerelease: true,
       draft: false,
     })
+    expect(buildMock).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'))
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
