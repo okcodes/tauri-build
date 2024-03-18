@@ -31096,14 +31096,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getOrCreateGitHubRelease = void 0;
+exports.createGitHubRelease = exports.getOrCreateGitHubRelease = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
-    const octokit = new rest_1.Octokit({ auth: githubToken });
     try {
         // First try to get release by tag. If not found, create it.
         core.debug(`Will get existing release with tag "${tag}"`);
+        const octokit = new rest_1.Octokit({ auth: githubToken });
         const existingRelease = await octokit.repos.getReleaseByTag({ owner, repo, tag });
         core.debug(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`);
     }
@@ -31113,22 +31113,54 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
             throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${getReleaseError.message}`, { cause: getReleaseError });
         }
         // Release not found, create it.
-        core.debug(`Release with tag "${tag}" not found, will create it.`);
-        // TODO: Create a tag manually so it's signed.
-        const createReleaseResponse = await octokit.repos.createRelease({
-            owner,
-            repo,
-            tag_name: tag,
-            target_commitish: sha,
-            name: `Release ${tag}`,
-            body: `# Release \`${tag}\``,
-            draft,
-            prerelease,
-        });
-        console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
+        core.debug(`Release with tag "${tag}" not found.`);
+        await (0, exports.createGitHubRelease)({ githubToken, repo, owner, tag, sha, prerelease, draft });
     }
 };
 exports.getOrCreateGitHubRelease = getOrCreateGitHubRelease;
+const createGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
+    core.debug(`Will create will release with tag "${tag}" it.`);
+    const octokit = new rest_1.Octokit({ auth: githubToken });
+    // Create tag manually so it get signed.
+    try {
+        console.log(`Will create tag "${tag}" in commit "${sha}"`);
+        const createTagResponse = await octokit.git.createTag({
+            owner,
+            repo,
+            tag,
+            message: tag,
+            object: sha,
+            type: 'commit',
+        });
+        console.log(`Did create tag "${tag}" in commit "${sha}". Tag sha: "${createTagResponse.data.sha}".`);
+        // Create a reference for the tag
+        console.log(`Will create reference to tag "${tag}".`);
+        const referenceResponse = await octokit.git.createRef({
+            owner,
+            repo,
+            ref: `refs/tags/${tag}`,
+            sha: createTagResponse.data.sha, // Is this sha different from the commit sha?
+        });
+        console.log(`Did create reference to tag "${tag}".`, referenceResponse);
+    }
+    catch (createTagError) {
+        console.error(`Cannot create tag "${tag}" on commit "${sha}": ${createTagError.message}`, createTagError);
+        // Don't throw. Creating a tag is not required, if a release is created the tag is created automatically.
+        // The manual tag creation is just for creating a signed tag but that's not a required step.
+    }
+    const createReleaseResponse = await octokit.repos.createRelease({
+        owner,
+        repo,
+        tag_name: tag,
+        target_commitish: sha,
+        name: `Release ${tag}`,
+        body: `# Release \`${tag}\``,
+        draft,
+        prerelease,
+    });
+    console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
+};
+exports.createGitHubRelease = createGitHubRelease;
 
 
 /***/ }),
