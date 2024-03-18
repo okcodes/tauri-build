@@ -18,10 +18,10 @@ type Params = {
 export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<void> => {
   try {
     // First try to get release by tag. If not found, create it.
-    core.debug(`Will get existing release with tag "${tag}"`)
+    core.info(`Will get existing release with tag "${tag}"`)
     const octokit = new Octokit({ auth: githubToken })
     const existingRelease = await octokit.repos.getReleaseByTag({ owner, repo, tag })
-    core.debug(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`)
+    core.info(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`)
   } catch (getReleaseError) {
     // If error is not 404, it's an unknown error.
     if ((getReleaseError as any).status !== 404) {
@@ -29,13 +29,13 @@ export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, 
     }
 
     // Release not found, create it.
-    core.debug(`Release with tag "${tag}" not found.`)
+    core.info(`Release with tag "${tag}" not found.`)
     await createGitHubRelease({ githubToken, repo, owner, tag, sha, prerelease, draft })
   }
 }
 
 export const createGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<void> => {
-  core.debug(`Will create will release with tag "${tag}" it.`)
+  core.info(`Will create will release with tag "${tag}" it.`)
 
   const octokit = new Octokit({ auth: githubToken })
 
