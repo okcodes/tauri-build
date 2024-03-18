@@ -42,7 +42,7 @@ const setAllValidRequiredEnvVars = () => {
   test_setEnvVar('GITHUB_SHA', THE_GITHUB_SHA)
 }
 
-describe('action', () => {
+describe('run', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 

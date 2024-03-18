@@ -15,3 +15,14 @@ export const build = async (tauriContext: string, buildOptions: string) => {
 export const cleanOptions = (options: string): string[] => {
   return options.replace(/\s+/g, ' ').split(' ').filter(Boolean)
 }
+
+export const targetFromOptions = (options: string): string | undefined => {
+  const optionsArray = cleanOptions(options)
+  const index = optionsArray.findIndex(_ => _ === '--target' || _ === '-t')
+
+  if (index === -1) {
+    return void 0
+  }
+
+  return optionsArray[index + 1]
+}
