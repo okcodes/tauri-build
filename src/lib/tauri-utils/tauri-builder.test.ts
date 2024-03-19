@@ -16,27 +16,26 @@ describe('build', () => {
   })
 
   test.each([
-    ['project-with-yarn', 'yarn'],
-    ['project-with-pnpm', 'pnpm'],
-    ['project-with-npm', 'npm'],
-  ])('Project "%s" uses "%s" as package manager', async (projectDir, expectedPackageManager) => {
+    { projectDir: 'project-with-yarn', expectedPackageManager: 'yarn' },
+    { projectDir: 'project-with-pnpm', expectedPackageManager: 'pnpm' },
+    { projectDir: 'project-with-npm', expectedPackageManager: 'npm' },
+  ])('Project "$projectDir" uses "$expectedPackageManager" as package manager', async ({ projectDir, expectedPackageManager }) => {
     const tauriContext = path.join(__dirname, 'test-files', projectDir)
-    await tauriBuilder.build(tauriContext, '--target aarch64-apple-darwin --bundles "app,dmg,updater"') // Build options supports trimming repeated spaces.
+    await tauriBuilder.build(tauriContext, '--target aarch64-apple-darwin --bundles "app,dmg,updater"')
     expect(buildMock).toHaveReturned()
     expect(executeCommandMock).toHaveBeenNthCalledWith(1, `${expectedPackageManager} install`, { cwd: tauriContext })
-    // Note how the "bundles" flag is special, and it will always surround all the bundles with single quotes and will remove spaces between them.
     expect(executeCommandMock).toHaveBeenNthCalledWith(2, `${expectedPackageManager} tauri build --target aarch64-apple-darwin --bundles "app,dmg,updater"`, { cwd: tauriContext })
   })
 })
 
 describe('targetFromBuildOptions', () => {
   test.each([
-    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", 'aarch64-apple-darwin'], // Target set via full name
-    ["-t x86_64-pc-windows-msvc --bundles 'app,dmg,updater'", 'x86_64-pc-windows-msvc'], // Target set via alias
-    ['', void 0], // No flags set at all
-    ["--bundles 'app,dmg,updater'", void 0], // Target not set, other flags set
-  ])('Parse options "%s" should contain target "%s"', (options, target) => {
-    tauriBuilder.targetFromBuildOptions(options)
-    expect(targetFromBuildOptionsMock).toHaveReturnedWith(target)
+    { optionsString: "--target aarch64-apple-darwin --bundles 'app,dmg,updater'", expectedTarget: 'aarch64-apple-darwin' }, // Target set via full name
+    { optionsString: "-t x86_64-pc-windows-msvc --bundles 'app,dmg,updater'", expectedTarget: 'x86_64-pc-windows-msvc' }, // Target set via alias
+    { optionsString: '', expectedTarget: void 0 }, // No flags set at all
+    { optionsString: "--bundles 'app,dmg,updater'", expectedTarget: void 0 }, // Target not set, other flags set
+  ])('Parse options "$optionsString" should contain target "$expectedTarget"', ({ optionsString, expectedTarget }) => {
+    tauriBuilder.targetFromBuildOptions(optionsString)
+    expect(targetFromBuildOptionsMock).toHaveReturnedWith(expectedTarget)
   })
 })
