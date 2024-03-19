@@ -23,13 +23,21 @@ export const build = async (tauriContext: string, buildOptions: string) => {
     if (target) {
       // Apple Universal requires arm and intel rust targets
       if (target === Target_UniversalAppleDarwin) {
-        command = `rustup target add ${Target_x86_64AppleDarwin} && rustup target add ${Target_Aarch64AppleDarwin}`
+        // Add intel support
+        command = `rustup target add ${Target_x86_64AppleDarwin}`
+        console.log(`${GREEN}Will install rust dependency 1/2 for target${RESET}`, { target, command })
+        await executeCommand(command, { cwd: tauriContext })
+
+        // Add apple silicon support
+        command = `rustup target add ${Target_Aarch64AppleDarwin}`
+        console.log(`${GREEN}Will install rust dependency 2/2 for target${RESET}`, { target, command })
+        await executeCommand(command, { cwd: tauriContext })
       } else {
         command = `rustup target add ${target}`
+        console.log(`${GREEN}Will install rust dependencies for target${RESET}`, { target, command })
+        await executeCommand(command, { cwd: tauriContext })
       }
-      console.log(`${GREEN}Will install rust dependencies for target${RESET}`, { target, command })
-      await executeCommand(command, { cwd: tauriContext })
-      console.log(`${GREEN}Did install rust dependencies for target${RESET}`, { target, command })
+      console.log(`${GREEN}Did install rust dependencies for target${RESET}`, { target })
     } else {
       console.log(`${GREEN}Target was not specified${RESET}`)
     }
