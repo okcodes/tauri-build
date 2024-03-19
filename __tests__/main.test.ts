@@ -35,6 +35,7 @@ const THE_GITHUB_OWNER = 'the-owner'
 const THE_GITHUB_REPO = 'the-repo'
 const THE_GITHUB_REPOSITORY = `${THE_GITHUB_OWNER}/${THE_GITHUB_REPO}`
 const THE_GITHUB_SHA = '4a18826a13c84325ae24d2b7c83918159319c94d'
+const THE_GITHUB_SHORT_SHA = '4a18826'
 
 const setAllValidRequiredEnvVars = () => {
   test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
@@ -59,16 +60,23 @@ describe('run', () => {
     buildMock = jest.spyOn(tauriBuilder, 'build').mockImplementation()
   })
 
-  it('called with correct data must succeed', async () => {
+  test.each([
+    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", '{NAME}-v{VERSION}+{SHORT_SHA}', `my-app-under-test-v7.7.7+${THE_GITHUB_SHORT_SHA}`, true, true],
+    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", 'hardcoded-text-{VERSION}', 'hardcoded-text-7.7.7', true, false],
+    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", '{name}-{version}+{short_sha}', `my-app-under-test-7.7.7+${THE_GITHUB_SHORT_SHA}`, false, true],
+    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", 'my-test-app', 'my-test-app', false, false],
+    ['', '{VERSION}', '7.7.7', true, true],
+    ['', '{sHoRt_sHa}', THE_GITHUB_SHORT_SHA, false, false],
+  ])('Must succeed with buildOptions: %s, tagTemplate: %s, tag: %s, prerelease: %s, draft: %s', async (buildOptions, tagTemplate, tag, prerelease, draft) => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'test-files')
         case 'buildOptions':
-          return "     --target  aarch64-apple-darwin   --bundles   'app,dmg,updater'   "
+          return buildOptions
         case 'tagTemplate':
-          return 'my-test-app-{VERSION}-and-{VERSION}'
+          return tagTemplate
         default:
           return ''
       }
@@ -76,9 +84,9 @@ describe('run', () => {
     getBooleanInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
         case 'prerelease':
-          return true
+          return prerelease
         case 'draft':
-          return false
+          return draft
         default:
           return false
       }
@@ -91,17 +99,17 @@ describe('run', () => {
     // Verify that all the core library functions were called correctly
     expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
     expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
-    expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, 'my-test-app-7.7.7-and-7.7.7')
+    expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, tag)
     expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, {
       githubToken: THE_GITHUB_TOKEN,
       repo: THE_GITHUB_REPO,
       owner: THE_GITHUB_OWNER,
-      tag: 'my-test-app-7.7.7-and-7.7.7',
+      tag,
       sha: THE_GITHUB_SHA,
-      prerelease: true,
-      draft: false,
+      prerelease,
+      draft,
     })
-    expect(buildMock).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), "     --target  aarch64-apple-darwin   --bundles   'app,dmg,updater'   ")
+    expect(buildMock).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), buildOptions)
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
