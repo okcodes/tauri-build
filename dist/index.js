@@ -32924,9 +32924,9 @@ const main_1 = __nccwpck_require__(399);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.executeCommand = void 0;
-const executeCommand = async (command, options) => {
+const executeCommand = async (command, options = {}) => {
     const { execaCommand } = await __nccwpck_require__.e(/* import() */ 463).then(__nccwpck_require__.bind(__nccwpck_require__, 7463));
-    const subprocess = execaCommand(command, options);
+    const subprocess = execaCommand(command, { ...options, stdio: 'inherit' });
     // Realtime log subprocess output
     subprocess?.stdout?.on('data', chunk => console.log(chunk.toString()));
     subprocess?.stderr?.on('data', chunk => console.error(chunk.toString()));
