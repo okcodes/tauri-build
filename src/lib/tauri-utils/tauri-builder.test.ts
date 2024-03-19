@@ -24,7 +24,19 @@ describe('build', () => {
     await tauriBuilder.build(tauriContext, '--target aarch64-apple-darwin --bundles "app,dmg,updater"')
     expect(buildMock).toHaveReturned()
     expect(executeCommandMock).toHaveBeenNthCalledWith(1, `${expectedPackageManager} install`, { cwd: tauriContext })
-    expect(executeCommandMock).toHaveBeenNthCalledWith(2, `${expectedPackageManager} tauri build --target aarch64-apple-darwin --bundles "app,dmg,updater"`, { cwd: tauriContext })
+    expect(executeCommandMock).toHaveBeenNthCalledWith(3, `${expectedPackageManager} tauri build --target aarch64-apple-darwin --bundles "app,dmg,updater"`, { cwd: tauriContext })
+  })
+
+  test.each([
+    { target: 'x86_64-apple-darwin', expectedRustDependencies: 'rustup target add x86_64-apple-darwin' },
+    { target: 'aarch64-apple-darwin', expectedRustDependencies: 'rustup target add aarch64-apple-darwin' },
+    { target: 'universal-apple-darwin', expectedRustDependencies: 'rustup target add x86_64-apple-darwin && rustup target add aarch64-apple-darwin' },
+    { target: 'x86_64-pc-windows-msvc', expectedRustDependencies: 'rustup target add x86_64-pc-windows-msvc' },
+  ])('Building for target "$target" installs "$expectedRustDependencies"', async ({ target, expectedRustDependencies }) => {
+    const tauriContext = path.join(__dirname, 'test-files', 'project-with-pnpm')
+    await tauriBuilder.build(tauriContext, `--target ${target} --bundles "app,dmg,updater"`)
+    expect(buildMock).toHaveReturned()
+    expect(executeCommandMock).toHaveBeenNthCalledWith(2, expectedRustDependencies, { cwd: tauriContext })
   })
 })
 
