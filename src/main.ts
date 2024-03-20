@@ -54,7 +54,7 @@ export async function run(): Promise<void> {
 
     // Validate amount of artifacts
     if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
-      core.setFailed(`The input "expectedArtifacts" must be a number greater or equal to 1.`)
+      core.setFailed('The input "expectedArtifacts" must be a number greater or equal to 1.')
       return
     }
 
@@ -71,7 +71,6 @@ export async function run(): Promise<void> {
 
     await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
     const { target: rustTarget } = await build(tauriContext, buildOptions)
-    const bundles = bundlesFromBuildOptions(buildOptions)
     const { name: appName, version: appVersion } = appInfo.package
     await uploadAppToGithub({ owner, repo, tag, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
 

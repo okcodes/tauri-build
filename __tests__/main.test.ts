@@ -169,12 +169,73 @@ describe('run', () => {
     }
   )
 
+  test.each([
+    {
+      description: 'Called with invalid "expectedArtifacts" must fail.',
+      expectedArtifacts: '0', // Invalid expected artifacts
+      buildOptions: '--target universal-apple-darwin', // Valid
+      expectedError: 'The input "expectedArtifacts" must be a number greater or equal to 1.',
+    },
+    {
+      description: 'Called with invalid "expectedArtifacts" must fail.',
+      expectedArtifacts: '', // Invalid expected artifacts
+      buildOptions: '-t universal-apple-darwin', // Valid
+      expectedError: 'The input "expectedArtifacts" must be a number greater or equal to 1.',
+    },
+    {
+      description: 'Called with valid "expectedArtifacts" but invalid "buildOptions".',
+      expectedArtifacts: '1', // Valid expected artifacts
+      buildOptions: '--bundles updater', // Invalid build options (--target missing).
+      expectedError: 'The buildOptions must contain a flag --target (or -t) specifying the rust target triple to build',
+    },
+  ])('$description', async ({ expectedArtifacts, expectedError, buildOptions }) => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'tauriContext':
+          return path.join(__dirname, 'test-files')
+        case 'buildOptions':
+          return buildOptions
+        case 'expectedArtifacts':
+          return expectedArtifacts
+        case 'tagTemplate':
+          return 'hardcoded'
+        default:
+          return ''
+      }
+    })
+    getBooleanInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'prerelease':
+          return true
+        case 'draft':
+          return true
+        default:
+          return false
+      }
+    })
+
+    setAllValidRequiredEnvVars()
+    await main.run()
+    expect(runMock).toHaveReturned()
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, expectedError)
+
+    // Core function not called
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildSpied).not.toHaveBeenCalled()
+  })
+
   it('called with invalid "tauriContext" data must fail', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'non-existent-dir')
+        case 'expectedArtifacts':
+          return '1'
+        case 'buildOptions':
+          return '--target universal-apple-darwin'
         default:
           return ''
       }
@@ -184,6 +245,7 @@ describe('run', () => {
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, expect.stringMatching(/^Cannot read or parse toml file/))
 
     // Core function not called
     expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
