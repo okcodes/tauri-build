@@ -61,10 +61,10 @@ describe('run', () => {
   })
 
   test.each([
-    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", '{NAME}-v{VERSION}+{SHORT_SHA}', `my-app-under-test-v7.7.7+${THE_GITHUB_SHORT_SHA}`, true, true],
-    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", 'hardcoded-text-{VERSION}', 'hardcoded-text-7.7.7', true, false],
-    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", '{name}-{version}+{short_sha}', `my-app-under-test-7.7.7+${THE_GITHUB_SHORT_SHA}`, false, true],
-    ["--target aarch64-apple-darwin --bundles 'app,dmg,updater'", 'my-test-app', 'my-test-app', false, false],
+    ['--target aarch64-apple-darwin --bundles app,dmg,updater', '{NAME}-v{VERSION}+{SHORT_SHA}', `my-app-under-test-v7.7.7+${THE_GITHUB_SHORT_SHA}`, true, true],
+    ['--target aarch64-apple-darwin --bundles app,dmg,updater', 'hardcoded-text-{VERSION}', 'hardcoded-text-7.7.7', true, false],
+    ['--target aarch64-apple-darwin --bundles app,dmg,updater', '{name}-{version}+{short_sha}', `my-app-under-test-7.7.7+${THE_GITHUB_SHORT_SHA}`, false, true],
+    ['--target aarch64-apple-darwin --bundles app,dmg,updater', 'my-test-app', 'my-test-app', false, false],
     ['', '{VERSION}', '7.7.7', true, true],
     ['', '{sHoRt_sHa}', THE_GITHUB_SHORT_SHA, false, false],
   ])('Must succeed with buildOptions: %s, tagTemplate: %s, tag: %s, prerelease: %s, draft: %s', async (buildOptions, tagTemplate, tag, prerelease, draft) => {
