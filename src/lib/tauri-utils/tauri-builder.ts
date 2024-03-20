@@ -6,7 +6,7 @@ const RESET = '\x1b[0m'
 const GREEN = '\x1b[32m'
 const RED = '\x1b[31m'
 
-export const build = async (tauriContext: string, buildOptions: string) => {
+export const build = async (tauriContext: string, buildOptions: string): Promise<{ target: string }> => {
   const target = targetFromBuildOptions(buildOptions)
 
   if (!target) {
@@ -47,6 +47,7 @@ export const build = async (tauriContext: string, buildOptions: string) => {
     console.log(`${GREEN}Will build tauri project${RESET}`, { command })
     await executeCommand(command, { cwd: tauriContext })
     console.log(`${GREEN}Did build tauri project${RESET}`, { command })
+    return { target }
   } catch (error) {
     console.log(`${RED}Build failed when running command${RESET}`, { command })
     throw new Error(`Error building: ${(error as Error).message}`, { cause: error })

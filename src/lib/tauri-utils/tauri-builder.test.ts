@@ -49,7 +49,8 @@ describe('build', () => {
     { target: 'aarch64-pc-windows-msvc', expectedRustDependencies: ['rustup target add aarch64-pc-windows-msvc'] },
   ])('Building for target "$target" installs required dependencies"', async ({ target, expectedRustDependencies }) => {
     const tauriContext = path.join(__dirname, 'test-files', 'project-with-pnpm')
-    await tauriBuilder.build(tauriContext, `--target ${target} --bundles "app,dmg,updater"`)
+    const buildResult = await tauriBuilder.build(tauriContext, `--target ${target} --bundles "app,dmg,updater"`)
+    expect(buildResult).toEqual({ target })
     expect(buildMock).toHaveReturned()
     expect(executeCommandMock).toHaveBeenNthCalledWith(2, expectedRustDependencies[0], { cwd: tauriContext })
 
