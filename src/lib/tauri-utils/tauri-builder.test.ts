@@ -74,3 +74,17 @@ describe('targetFromBuildOptions', () => {
     expect(targetFromBuildOptionsMock).toHaveReturnedWith(expectedTarget)
   })
 })
+
+describe('targetFromBuildOptions', () => {
+  test.each([
+    { optionsString: '--target aarch64-apple-darwin --bundles app,dmg,updater', expectedBundles: ['app', 'dmg', 'updater'] },
+    { optionsString: '-t x86_64-pc-windows-msvc -b app,dmg,updater', expectedBundles: ['app', 'dmg', 'updater'] },
+    { optionsString: '-t x86_64-pc-windows-msvc -b app,updater', expectedBundles: ['app', 'updater'] },
+    { optionsString: '-t x86_64-pc-windows-msvc -b app', expectedBundles: ['app'] },
+    { optionsString: '', expectedBundles: [] },
+    { optionsString: '--target aarch64-apple-darwin', expectedBundles: [] },
+  ])('Parse options "$optionsString" should contain target "$expectedTarget"', ({ optionsString, expectedBundles }) => {
+    const bundles = tauriBuilder.bundlesFromBuildOptions(optionsString)
+    expect(bundles).toEqual(expectedBundles)
+  })
+})

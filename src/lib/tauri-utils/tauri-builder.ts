@@ -62,3 +62,11 @@ export const targetFromBuildOptions = (optionsString: string): string | undefine
   const options = yargs().option('target', { type: 'string', alias: 't' }).parseSync(optionsString)
   return options.target as string | undefined
 }
+
+export const bundlesFromBuildOptions = (optionsString: string): string[] => {
+  const { bundles = '' } = yargs().option('bundles', { type: 'string', alias: 'b' }).parseSync(optionsString)
+  return bundles
+    .split(',')
+    .map(bundle => bundle.trim())
+    .filter(Boolean)
+}
