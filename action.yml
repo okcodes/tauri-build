@@ -14,8 +14,11 @@ inputs:
   buildOptions:
     description: Options sent to the tauri build command. You must specify the "--target" flag. E.g., "--target aarch64-apple-darwin --bundles 'app,dmg,updater'". Run "pnpm run build --help" for more info.
     required: true
+  expectedArtifacts:
+    description: The expected number of app files to find after the build. The action fails if this number is not met.
+    required: true
   tagTemplate:
-    description: 'Template to generate the tag name of the release. It will interpolate the string "{{VERSION}}" with the app version defined in "src-tauri/Cargo.toml".'
+    description: 'Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in "src-tauri/Cargo.toml".'
     required: true
   prerelease:
     description: 'If the GitHub release to create should be marked as prerelease.'
