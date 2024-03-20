@@ -49,6 +49,7 @@ export const build = async (tauriContext: string, buildOptions: string) => {
     console.log(`${GREEN}Did build tauri project${RESET}`, { command })
   } catch (error) {
     console.log(`${RED}Build failed when running command${RESET}`, { command })
+    throw new Error(`Error building: ${(error as Error).message}`, { cause: error })
   }
 }
 
