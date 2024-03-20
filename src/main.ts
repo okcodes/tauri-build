@@ -56,9 +56,10 @@ export async function run(): Promise<void> {
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
     await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
     await build(tauriContext, buildOptions)
+    const { name: appName, version: appVersion } = appInfo.package
 
-    output('appName', appInfo.package.name)
-    output('appVersion', appInfo.package.version)
+    output('appName', appName)
+    output('appVersion', appVersion)
     output('tag', tag)
   } catch (error) {
     // Fail the workflow run if an error occurs
