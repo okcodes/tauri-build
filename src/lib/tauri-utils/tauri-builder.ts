@@ -7,6 +7,12 @@ const GREEN = '\x1b[32m'
 const RED = '\x1b[31m'
 
 export const build = async (tauriContext: string, buildOptions: string) => {
+  const target = targetFromBuildOptions(buildOptions)
+
+  if (!target) {
+    throw new Error('The --target flag must be specified in the build options')
+  }
+
   const packageManager = getPackageManager(tauriContext)
   let command = ''
 
@@ -18,29 +24,23 @@ export const build = async (tauriContext: string, buildOptions: string) => {
     console.log(`${GREEN}Did install node dependencies${RESET}`, { command })
 
     // Install rust target dependencies
-    const target = targetFromBuildOptions(buildOptions)
+    // Apple Universal requires arm and intel rust targets
+    if (target === Target_UniversalAppleDarwin) {
+      // Add intel support
+      command = `rustup target add ${Target_x86_64AppleDarwin}`
+      console.log(`${GREEN}Will install rust dependency 1/2 for target${RESET}`, { target, command })
+      await executeCommand(command, { cwd: tauriContext })
 
-    if (target) {
-      // Apple Universal requires arm and intel rust targets
-      if (target === Target_UniversalAppleDarwin) {
-        // Add intel support
-        command = `rustup target add ${Target_x86_64AppleDarwin}`
-        console.log(`${GREEN}Will install rust dependency 1/2 for target${RESET}`, { target, command })
-        await executeCommand(command, { cwd: tauriContext })
-
-        // Add apple silicon support
-        command = `rustup target add ${Target_Aarch64AppleDarwin}`
-        console.log(`${GREEN}Will install rust dependency 2/2 for target${RESET}`, { target, command })
-        await executeCommand(command, { cwd: tauriContext })
-      } else {
-        command = `rustup target add ${target}`
-        console.log(`${GREEN}Will install rust dependencies for target${RESET}`, { target, command })
-        await executeCommand(command, { cwd: tauriContext })
-      }
-      console.log(`${GREEN}Did install rust dependencies for target${RESET}`, { target })
+      // Add apple silicon support
+      command = `rustup target add ${Target_Aarch64AppleDarwin}`
+      console.log(`${GREEN}Will install rust dependency 2/2 for target${RESET}`, { target, command })
+      await executeCommand(command, { cwd: tauriContext })
     } else {
-      console.log(`${GREEN}Target was not specified${RESET}`)
+      command = `rustup target add ${target}`
+      console.log(`${GREEN}Will install rust dependencies for target${RESET}`, { target, command })
+      await executeCommand(command, { cwd: tauriContext })
     }
+    console.log(`${GREEN}Did install rust dependencies for target${RESET}`, { target })
 
     // Build tauri app
     command = `${packageManager} tauri build ${buildOptions}`

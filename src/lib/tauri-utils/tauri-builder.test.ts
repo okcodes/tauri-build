@@ -20,7 +20,12 @@ describe('build', () => {
       throw new Error('Forced error for testing')
     })
     const tauriContext = path.join(__dirname, 'test-files', 'project-with-npm')
-    await expect(tauriBuilder.build(tauriContext, '')).rejects.toThrow('Error building: Forced error for testing')
+    await expect(tauriBuilder.build(tauriContext, '--target aarch64-apple-darwin --bundles "app,dmg,updater"')).rejects.toThrow('Error building: Forced error for testing')
+  })
+
+  it('If not target is specified in the build options it must fail', async () => {
+    const tauriContext = path.join(__dirname, 'test-files', 'project-with-npm')
+    await expect(tauriBuilder.build(tauriContext, '--bundles "app,dmg,updater"')).rejects.toThrow('The --target flag must be specified in the build options')
   })
 
   test.each([
