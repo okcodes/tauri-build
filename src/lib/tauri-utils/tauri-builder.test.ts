@@ -15,6 +15,14 @@ describe('build', () => {
     })
   })
 
+  it('If a command fails, it must throw', async () => {
+    executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation(async (_command, _options) => {
+      throw new Error('Forced error for testing')
+    })
+    const tauriContext = path.join(__dirname, 'test-files', 'project-with-npm')
+    await expect(tauriBuilder.build(tauriContext, '')).rejects.toThrow('Error building: Forced error for testing')
+  })
+
   test.each([
     { projectDir: 'project-with-yarn', expectedPackageManager: 'yarn' },
     { projectDir: 'project-with-pnpm', expectedPackageManager: 'pnpm' },
