@@ -176,6 +176,18 @@ describe('run', () => {
         expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
         expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
       }
+      expect(uploadAppToGithubMock).toHaveBeenCalledTimes(1)
+      expect(uploadAppToGithubMock).toHaveBeenNthCalledWith(1, {
+        appName: 'my-app-under-test',
+        appVersion: '7.7.7',
+        expectedArtifacts: +expectedArtifacts,
+        githubToken: 'unit-test-token',
+        owner: 'the-owner',
+        repo: 'the-repo',
+        rustTarget: expectedTarget,
+        tag,
+        tauriContext: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files',
+      })
       expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
       expect(setFailedMock).not.toHaveBeenCalled()
       expect(errorMock).not.toHaveBeenCalled()
