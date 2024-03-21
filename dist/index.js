@@ -33319,17 +33319,18 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
     const octokit = new rest_1.Octokit({ auth: githubToken });
     try {
         // First try to get release by tag. If not found, create it.
-        console.log(`Will get existing release with tag "${tag}"`);
+        console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag });
         const existingRelease = await octokit.repos.getReleaseByTag({ owner, repo, tag });
         console.log(`Did get existing release with tag "${tag}". ID: "${existingRelease.data.id}"`);
     }
-    catch (getReleaseError) {
+    catch (error) {
         // If error is not 404, it's an unknown error.
-        if (getReleaseError.status !== 404) {
-            throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${getReleaseError.message}`, { cause: getReleaseError });
+        if (error.status !== 404) {
+            console.error('Unexpected error getting release by tag', { owner, repo, tag, error });
+            throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${error.message}`, { cause: error });
         }
         // Release not found, create it.
-        console.log(`Release with tag "${tag}" not found. Will create it.`);
+        console.log(`Release with tag "${tag}" not found. Will create it.`, { owner, repo, tag, sha, draft, prerelease });
         const createReleaseResponse = await octokit.repos.createRelease({
             owner,
             repo,
@@ -33340,7 +33341,7 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
             draft,
             prerelease,
         });
-        console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
+        console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`, { owner, repo, tag, sha, draft, prerelease });
     }
     finally {
         core.endGroup();
