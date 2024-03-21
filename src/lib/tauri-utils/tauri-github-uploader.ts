@@ -49,16 +49,12 @@ const isMacVersionlessArtifact = (filename: string) => {
   return macVersionlessExt.some(ext => filename.endsWith(ext))
 }
 
-type ExtensionResult = { is: true; extension: ArtifactExtension } | { is: false; extension: undefined }
-
-const isUpdaterFile = (filename: string): ExtensionResult => {
-  const extension = updaterExtensions.find(ext => filename.endsWith(ext))
-  return extension ? { is: true, extension } : { is: false, extension: void 0 }
+const getUpdaterExtension = (filename: string): ArtifactExtension | undefined => {
+  return updaterExtensions.find(ext => filename.endsWith(ext))
 }
 
-const isSignatureFile = (filename: string): ExtensionResult => {
-  const extension = signatureExtensions.find(ext => filename.endsWith(ext))
-  return extension ? { is: true, extension } : { is: false, extension: void 0 }
+const getSignatureExtension = (filename: string): ArtifactExtension | undefined => {
+  return signatureExtensions.find(ext => filename.endsWith(ext))
 }
 
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
@@ -75,8 +71,10 @@ const rustTargetToMacBasenameSuffix = (target: string) => {
 const UPDATER_PREFIX = '.updater'
 
 export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
-  const { is: isUpdater, extension: updaterExt } = isUpdaterFile(filePath)
-  const { is: isSignature, extension: signatureExt } = isSignatureFile(filePath)
+  const updaterExt = getUpdaterExtension(filePath)
+  const isUpdater = !!updaterExt
+  const signatureExt = getSignatureExtension(filePath)
+  const isSignature = !!signatureExt
 
   // Updaters and signatures use a prefix before the file basename.
   const updaterSuffix = isUpdater || isSignature ? UPDATER_PREFIX : ''
