@@ -18,10 +18,10 @@ jobs:
         # The pre-release branch name will be like
         # "app-name-v0.0.0+2024.12.31T10.33.59Z-BRANCH-NAME-6a7a8dd".
         run: |
-         echo "tag=${NAME}-v${VERSION}+"\
-         "$(date -u '+%Y.%m.%dT%H.%M.%SZ')-"\
-         "${{ github.ref_name }}-"\
-         "$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "tag=${NAME}-v${VERSION}+"\
+          "$(date -u '+%Y.%m.%dT%H.%M.%SZ')-"\
+          "${{ github.ref_name }}-"\
+          "$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
   build:
     needs: [long-tag]
     name: Build ${{ matrix.name }}
@@ -85,10 +85,8 @@ jobs:
           tagTemplate: ${{ needs.long-tag.outputs.tag }}
           draft: false
           prerelease: true
-          buildOptions: > 
-            --target ${{ matrix.target }}
-            --bundles ${{ matrix.bundles }}
-            --verbose
+          buildOptions: >
+            --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
           expectedArtifacts: ${{ matrix.expectedArtifacts }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
