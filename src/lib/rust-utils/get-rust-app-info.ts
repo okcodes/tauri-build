@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { parse } from '@iarna/toml'
+import * as core from '@actions/core'
 
 export type RustAppInfo = {
   package: {
@@ -13,6 +14,8 @@ export type RustAppInfo = {
 
 export const parseCargoTomlFile = async (cargoTomlPath: string): Promise<RustAppInfo> => {
   try {
+    core.startGroup('GET RUST APP INFO')
+    console.log('Will parse toml file', cargoTomlPath)
     const toml = (await fs.readFile(cargoTomlPath)).toString('utf-8')
     const appInfo = parse(toml) as RustAppInfo
     return {
@@ -25,6 +28,8 @@ export const parseCargoTomlFile = async (cargoTomlPath: string): Promise<RustApp
     }
   } catch (error) {
     throw new Error(`Cannot read or parse toml file: ${(error as Error).message}`, { cause: error })
+  } finally {
+    core.endGroup()
   }
 }
 

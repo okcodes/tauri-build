@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest'
+import * as core from '@actions/core'
 
 import type { RestEndpointMethodTypes } from '@octokit/rest'
 
@@ -15,6 +16,7 @@ type Params = {
 }
 
 export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<void> => {
+  core.startGroup('GET OR CREATE RELEASE')
   const octokit = new Octokit({ auth: githubToken })
   try {
     // First try to get release by tag. If not found, create it.
@@ -40,5 +42,7 @@ export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, 
       prerelease,
     } as CreateReleaseParams)
     console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`)
+  } finally {
+    core.endGroup()
   }
 }

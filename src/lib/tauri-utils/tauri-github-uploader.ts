@@ -98,6 +98,8 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
 
 export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }: UploadAppToGithubArgs): Promise<void> => {
   try {
+    core.startGroup('UPLOAD APP TO GITHUB')
+
     const artifactsPattern = `src-tauri/target/${rustTarget}/release/bundle/**/${appName}*.{${knownExtensions.join(',')}}`
 
     // Find files to upload
@@ -165,6 +167,8 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
   } catch (error) {
     console.error('Cannot upload artifacts error details:', error)
     core.setFailed(`Cannot upload artifacts: ${(error as Error).message}`)
+  } finally {
+    core.endGroup()
   }
 }
 

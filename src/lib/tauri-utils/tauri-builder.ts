@@ -1,6 +1,7 @@
 import { executeCommand } from '../command-utils/command-utils'
 import { getPackageManager } from './tauri-utils'
 import yargs from 'yargs'
+import * as core from '@actions/core'
 
 const RESET = '\x1b[0m'
 const GREEN = '\x1b[32m'
@@ -17,6 +18,8 @@ export const build = async (tauriContext: string, buildOptions: string): Promise
   let command = ''
 
   try {
+    core.startGroup('BUILD TAURI APP')
+
     // Install node deps
     command = `${packageManager} install`
     console.log(`${GREEN}Will install node dependencies${RESET}`, { command })
@@ -51,6 +54,8 @@ export const build = async (tauriContext: string, buildOptions: string): Promise
   } catch (error) {
     console.log(`${RED}Build failed when running command${RESET}`, { command })
     throw new Error(`Error building: ${(error as Error).message}`, { cause: error })
+  } finally {
+    core.endGroup()
   }
 }
 
