@@ -6,10 +6,9 @@
   color: #0f0f0f;
   background-color: #f6f6f6;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
 .container {
@@ -62,25 +61,20 @@ button {
   color: #0f0f0f;
   background-color: #fff;
   transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
+  outline: none;
 }
 
 button:hover {
   border-color: #396cd8;
 }
 
+button {
+  cursor: pointer;
+}
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
 }
 
 #greet-input {
@@ -102,6 +96,7 @@ button {
     color: #fff;
     background-color: #0f0f0f98;
   }
+
   button:active {
     background-color: #0f0f0f69;
   }
