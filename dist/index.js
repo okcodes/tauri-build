@@ -33506,7 +33506,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uploadAppToGithub = void 0;
+exports.uploadAppToGithub = exports.getAssetMeta = void 0;
 const glob_1 = __nccwpck_require__(8211);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
@@ -33515,57 +33515,77 @@ const command_utils_1 = __nccwpck_require__(1470);
 const rest_1 = __nccwpck_require__(5375);
 const knownExtensions = [
     // Linux
-    'AppImage', // the standard app bundle
-    'AppImage.tar.gz', // the updater bundle
-    'AppImage.tar.gz.sig', // the signature of the update bundle
+    'AppImage', // app
+    'AppImage.tar.gz', // updater
+    'AppImage.tar.gz.sig', // signature
     // macOS
-    'app', // the standard app bundle
-    'app.tar.gz', // the updater bundle
-    'app.tar.gz.sig', // the signature of the update bundle
-    'dmg', // app bundle in a mountable disk image
+    'app', // app
+    'app.tar.gz', // updater
+    'app.tar.gz.sig', // signature
+    'dmg', // app (mountable)
     // Windows NSIS
-    'exe', // the standard app bundle
-    'nsis.zip', // the updater bundle
-    'nsis.zip.sig', // the signature of the update bundle
+    'exe', // app
+    'nsis.zip', // updater
+    'nsis.zip.sig', // signature
     // Windows MSI
-    'msi', // the standard app bundle
-    'msi.zip', // the updater bundle
-    'msi.zip.sig', // the signature of the update bundle
+    'msi', // app
+    'msi.zip', // updater
+    'msi.zip.sig', // signature
 ];
 const COMPRESS_EXT = '.tar.gz';
 const macVersionlessExt = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig']);
-const macUpdaterOrSignatureExt = Object.freeze(['app.tar.gz', 'app.tar.gz.sig']);
+const updaterExtensions = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip']);
+const signatureExtensions = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig']);
 const isMacVersionlessArtifact = (filename) => {
     return macVersionlessExt.some(ext => filename.endsWith(ext));
 };
-const isMacUpdaterOrSignature = (filename) => {
-    return macUpdaterOrSignatureExt.some(ext => filename.endsWith(ext));
+const getUpdaterExtension = (filename) => {
+    return updaterExtensions.find(ext => filename.endsWith(ext));
 };
+const getSignatureExtension = (filename) => {
+    return signatureExtensions.find(ext => filename.endsWith(ext));
+};
+// Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
 const rustTargetToMacSuffixMap = {
     'aarch64-apple-darwin': 'aarch64',
     'x86_64-apple-darwin': 'x64',
     'universal-apple-darwin': 'universal',
 };
-const rustTargetToMacSuffix = (target) => {
+const rustTargetToMacBasenameSuffix = (target) => {
     return rustTargetToMacSuffixMap[target] || target;
 };
-const getAssetName = ({ appName, artifactPath, appVersion, rustTarget }) => {
-    if (isMacVersionlessArtifact(artifactPath)) {
-        const match = path_1.default.basename(artifactPath).match(new RegExp(`^${appName}(?<extension>.*)`));
+const UPDATER_PREFIX = '.updater';
+const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }) => {
+    const updaterExt = getUpdaterExtension(filePath);
+    const isUpdater = !!updaterExt;
+    const signatureExt = getSignatureExtension(filePath);
+    const isSignature = !!signatureExt;
+    // Updaters and signatures use a prefix before the file basename.
+    const updaterSuffix = isUpdater || isSignature ? UPDATER_PREFIX : '';
+    if (isMacVersionlessArtifact(filePath)) {
+        const match = path_1.default.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`));
         const extension = match?.groups?.extension || '';
-        const updaterSuffix = isMacUpdaterOrSignature(artifactPath) ? '-updater' : ''; // TODO: Use the -updater suffix in all platforms.
-        return `${appName}_${appVersion}_${rustTargetToMacSuffix(rustTarget)}${updaterSuffix}${extension}`;
+        const assetName = `${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`;
+        return { assetName, isUpdater, isSignature };
     }
-    return path_1.default.basename(artifactPath);
+    const updaterOrSignatureExtension = updaterExt || signatureExt;
+    if (updaterOrSignatureExtension) {
+        const assetName = `${path_1.default.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`;
+        return { assetName, isUpdater, isSignature };
+    }
+    const assetName = path_1.default.basename(filePath);
+    return { assetName, isUpdater, isSignature };
 };
+exports.getAssetMeta = getAssetMeta;
 const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }) => {
     try {
         const artifactsPattern = `src-tauri/target/${rustTarget}/release/bundle/**/${appName}*.{${knownExtensions.join(',')}}`;
         // Find files to upload
-        const artifacts = (await (0, glob_1.glob)(artifactsPattern, { cwd: tauriContext })).map(relativePath => ({
+        const artifactRelativePaths = await (0, glob_1.glob)(artifactsPattern, { cwd: tauriContext });
+        const artifacts = artifactRelativePaths.map(relativePath => ({
             path: path_1.default.join(tauriContext, relativePath),
             isDir: fs_1.default.statSync(path_1.default.join(tauriContext, relativePath)).isDirectory(),
-            assetName: getAssetName({ artifactPath: relativePath, appName, rustTarget, appVersion }),
+            assetName: (0, exports.getAssetMeta)({ filePath: relativePath, appName, rustTarget, appVersion }).assetName,
         }));
         // Validate amount of artifacts
         if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
