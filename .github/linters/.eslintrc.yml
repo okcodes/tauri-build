@@ -78,4 +78,5 @@ rules:
     '@typescript-eslint/space-before-function-paren': 'off',
     '@typescript-eslint/type-annotation-spacing': 'error',
     '@typescript-eslint/unbound-method': 'error',
+    'jest/no-conditional-expect': 'off',
   }
