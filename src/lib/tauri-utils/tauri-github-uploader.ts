@@ -68,17 +68,23 @@ const rustTargetToMacSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
+const UPDATER_PREFIX = 'updater_'
+
 export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const isUpdater = isUpdaterFile(filePath)
   const isSignature = isSignatureFile(filePath)
+
+  // Updaters and signatures use a prefix before the file basename.
+  const updaterPrefix = isUpdater || isSignature ? UPDATER_PREFIX : ''
+
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const updaterSuffix = isUpdater || isSignature ? '-updater' : '' // TODO: Use the -updater suffix in all platforms.
-    const assetName = `${appName}_${appVersion}_${rustTargetToMacSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const assetName = `${updaterPrefix}${appName}_${appVersion}_${rustTargetToMacSuffix(rustTarget)}${extension}`
     return { assetName, isUpdater, isSignature }
   }
-  const assetName = path.basename(filePath)
+
+  const assetName = `${updaterPrefix}${path.basename(filePath)}`
   return { assetName, isUpdater, isSignature }
 }
 
