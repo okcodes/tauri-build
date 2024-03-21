@@ -9,22 +9,22 @@ type ArtifactExtension = 'AppImage' | 'AppImage.tar.gz' | 'AppImage.tar.gz.sig' 
 
 const knownExtensions: ArtifactExtension[] = [
   // Linux
-  'AppImage', // the standard app bundle
-  'AppImage.tar.gz', // the updater bundle
-  'AppImage.tar.gz.sig', // the signature of the update bundle
+  'AppImage', // app
+  'AppImage.tar.gz', // updater
+  'AppImage.tar.gz.sig', // signature
   // macOS
-  'app', // the standard app bundle
-  'app.tar.gz', // the updater bundle
-  'app.tar.gz.sig', // the signature of the update bundle
-  'dmg', // app bundle in a mountable disk image
+  'app', // app
+  'app.tar.gz', // updater
+  'app.tar.gz.sig', // signature
+  'dmg', // app (mountable)
   // Windows NSIS
-  'exe', // the standard app bundle
-  'nsis.zip', // the updater bundle
-  'nsis.zip.sig', // the signature of the update bundle
+  'exe', // app
+  'nsis.zip', // updater
+  'nsis.zip.sig', // signature
   // Windows MSI
-  'msi', // the standard app bundle
-  'msi.zip', // the updater bundle
-  'msi.zip.sig', // the signature of the update bundle
+  'msi', // app
+  'msi.zip', // updater
+  'msi.zip.sig', // signature
 ]
 const COMPRESS_EXT = '.tar.gz'
 
@@ -41,16 +41,23 @@ type UploadAppToGithubArgs = {
 }
 
 const macVersionlessExt: readonly ArtifactExtension[] = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig'])
-const macUpdaterOrSignatureExt: readonly ArtifactExtension[] = Object.freeze(['app.tar.gz', 'app.tar.gz.sig'])
+
+const updaterExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip'])
+const signatureExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig'])
 
 const isMacVersionlessArtifact = (filename: string) => {
   return macVersionlessExt.some(ext => filename.endsWith(ext))
 }
 
-const isMacUpdaterOrSignature = (filename: string) => {
-  return macUpdaterOrSignatureExt.some(ext => filename.endsWith(ext))
+const isUpdaterFile = (filename: string) => {
+  return updaterExtensions.some(ext => filename.endsWith(ext))
 }
 
+const isSignatureFile = (filename: string) => {
+  return signatureExtensions.some(ext => filename.endsWith(ext))
+}
+
+// Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
 const rustTargetToMacSuffixMap: Record<string, string> = {
   'aarch64-apple-darwin': 'aarch64',
   'x86_64-apple-darwin': 'x64',
@@ -61,14 +68,18 @@ const rustTargetToMacSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
-const getAssetName = ({ appName, artifactPath, appVersion, rustTarget }: { appName: string; artifactPath: string; appVersion: string; rustTarget: string }): string => {
-  if (isMacVersionlessArtifact(artifactPath)) {
-    const match = path.basename(artifactPath).match(new RegExp(`^${appName}(?<extension>.*)`))
+export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
+  const isUpdater = isUpdaterFile(filePath)
+  const isSignature = isSignatureFile(filePath)
+  if (isMacVersionlessArtifact(filePath)) {
+    const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const updaterSuffix = isMacUpdaterOrSignature(artifactPath) ? '-updater' : '' // TODO: Use the -updater suffix in all platforms.
-    return `${appName}_${appVersion}_${rustTargetToMacSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const updaterSuffix = isUpdater || isSignature ? '-updater' : '' // TODO: Use the -updater suffix in all platforms.
+    const assetName = `${appName}_${appVersion}_${rustTargetToMacSuffix(rustTarget)}${updaterSuffix}${extension}`
+    return { assetName, isUpdater, isSignature }
   }
-  return path.basename(artifactPath)
+  const assetName = path.basename(filePath)
+  return { assetName, isUpdater, isSignature }
 }
 
 export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }: UploadAppToGithubArgs): Promise<void> => {
@@ -76,10 +87,11 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
     const artifactsPattern = `src-tauri/target/${rustTarget}/release/bundle/**/${appName}*.{${knownExtensions.join(',')}}`
 
     // Find files to upload
-    const artifacts = (await glob(artifactsPattern, { cwd: tauriContext })).map(relativePath => ({
+    const artifactRelativePaths = await glob(artifactsPattern, { cwd: tauriContext })
+    const artifacts = artifactRelativePaths.map(relativePath => ({
       path: path.join(tauriContext, relativePath),
       isDir: fs.statSync(path.join(tauriContext, relativePath)).isDirectory(),
-      assetName: getAssetName({ artifactPath: relativePath, appName, rustTarget, appVersion }),
+      assetName: getAssetMeta({ filePath: relativePath, appName, rustTarget, appVersion }).assetName,
     }))
 
     // Validate amount of artifacts
