@@ -13,8 +13,8 @@ import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
 import * as githubRelease from '../src/lib/github-utils/github-release'
 import * as tauriBuilder from '../src/lib/tauri-utils/tauri-builder'
-// import * as tauriGithubUploader from '../src/lib/tauri-utils/tauri-github-uploader'
-// import * as commandUtils from '../src/lib/command-utils/command-utils'
+import * as tauriGithubUploader from '../src/lib/tauri-utils/tauri-github-uploader'
+import * as commandUtils from '../src/lib/command-utils/command-utils'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -26,9 +26,9 @@ let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
-// let executeCommandMock: jest.SpiedFunction<typeof commandUtils.executeCommand>
+let executeCommandMock: jest.SpiedFunction<typeof commandUtils.executeCommand>
 let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof githubRelease.getOrCreateGitHubRelease>
-// let uploadAppToGithubMock: jest.SpiedFunction<typeof tauriGithubUploader.uploadAppToGithub>
+let uploadAppToGithubMock: jest.SpiedFunction<typeof tauriGithubUploader.uploadAppToGithub>
 
 // Keep original implementation and spy
 const buildSpied = jest.spyOn(tauriBuilder, 'build')
@@ -59,9 +59,9 @@ describe('run', () => {
     getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-    // executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
+    executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
     getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockImplementation()
-    // uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
+    uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
   })
 
   test.each([
@@ -73,6 +73,7 @@ describe('run', () => {
       draft: true,
       expectedArtifacts: '30',
       expectedTarget: 'aarch64-apple-darwin',
+      expectedBuildCommand: `npm tauri build --target aarch64-apple-darwin --bundles app,dmg,updater`,
     },
     {
       buildOptions: '--target universal-apple-darwin --bundles app,dmg,updater',
@@ -82,6 +83,7 @@ describe('run', () => {
       draft: false,
       expectedArtifacts: '31',
       expectedTarget: 'universal-apple-darwin',
+      expectedBuildCommand: `npm tauri build --target universal-apple-darwin --bundles app,dmg,updater`,
     },
     {
       buildOptions: '--target x86_64-apple-darwin --bundles app,dmg,updater',
@@ -91,15 +93,17 @@ describe('run', () => {
       draft: true,
       expectedArtifacts: '32',
       expectedTarget: 'x86_64-apple-darwin',
+      expectedBuildCommand: `npm tauri build --target x86_64-apple-darwin --bundles app,dmg,updater`,
     },
     {
-      buildOptions: '--target x86_64-pc-windows-msvc --bundles app,dmg,updater',
+      buildOptions: '--target x86_64-pc-windows-msvc -b app,dmg,updater',
       tagTemplate: 'my-test-app',
       tag: 'my-test-app',
       prerelease: false,
       draft: false,
       expectedArtifacts: '33',
       expectedTarget: 'x86_64-pc-windows-msvc',
+      expectedBuildCommand: `npm tauri build --target x86_64-pc-windows-msvc -b app,dmg,updater`,
     },
     {
       buildOptions: '-t i686-pc-windows-msvc',
@@ -109,6 +113,7 @@ describe('run', () => {
       draft: true,
       expectedArtifacts: '33',
       expectedTarget: 'i686-pc-windows-msvc',
+      expectedBuildCommand: `npm tauri build -t i686-pc-windows-msvc`,
     },
     {
       buildOptions: '-t aarch64-pc-windows-msvc',
@@ -118,12 +123,13 @@ describe('run', () => {
       draft: false,
       expectedArtifacts: '33',
       expectedTarget: 'aarch64-pc-windows-msvc',
+      expectedBuildCommand: `npm tauri build -t aarch64-pc-windows-msvc`,
     },
     // { buildOptions: '', tagTemplate: '{VERSION}', tag: '7.7.7', prerelease: true, draft: true, expectedArtifacts: '33' },
     // { buildOptions: '', tagTemplate: '{sHoRt_sHa}', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
   ])(
     'With: buildOptions $buildOptions, tagTemplate $tagTemplate, tag $tag, prerelease $prerelease, draft $draft, expectedArtifacts $expectedArtifacts, expectedTarget $expectedTarget',
-    async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts, expectedTarget }) => {
+    async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts, expectedTarget, expectedBuildCommand }) => {
       // Set the action's inputs as return values from core.getInput()
       getInputMock.mockImplementation(name => {
         switch (name as ActionInputs) {
@@ -160,6 +166,16 @@ describe('run', () => {
       expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, tag)
       expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, repo: THE_GITHUB_REPO, owner: THE_GITHUB_OWNER, tag, sha: THE_GITHUB_SHA, prerelease, draft })
       expect(buildSpied).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), buildOptions)
+      expect(executeCommandMock).toHaveBeenNthCalledWith(1, 'npm install', { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+      if (expectedTarget !== 'universal-apple-darwin') {
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add ${expectedTarget}`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, expectedBuildCommand, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+      } else {
+        // On apple universal we install an additional rust target, so we make an extra command call
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add x86_64-apple-darwin`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+      }
       expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
       expect(setFailedMock).not.toHaveBeenCalled()
       expect(errorMock).not.toHaveBeenCalled()
