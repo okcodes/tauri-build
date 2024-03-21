@@ -47,6 +47,8 @@ jobs:
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'write'
 
     steps:
       - name: Checkout
@@ -57,7 +59,14 @@ jobs:
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          tauriContext: ./micro-demo/
+          tagTemplate: '{NAME}-v{VERSION}'
+          draft: true
+          prerelease: true
+          buildOptions: --target x86_64-apple-darwin --bundles app,dmg --verbose
+          expectedArtifacts: 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print Output
         id: output
