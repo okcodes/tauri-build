@@ -13,28 +13,25 @@ import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
 import * as githubRelease from '../src/lib/github-utils/github-release'
 import * as tauriBuilder from '../src/lib/tauri-utils/tauri-builder'
-import * as tauriGithubUploader from '../src/lib/tauri-utils/tauri-github-uploader'
-import * as commandUtils from '../src/lib/command-utils/command-utils'
+// import * as tauriGithubUploader from '../src/lib/tauri-utils/tauri-github-uploader'
+// import * as commandUtils from '../src/lib/command-utils/command-utils'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
-
 // Mocked functions
-let debugMock: jest.SpiedFunction<typeof core.debug>
+// let debugMock: jest.SpiedFunction<typeof core.debug>
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
-let executeCommandMock: jest.SpiedFunction<typeof commandUtils.executeCommand>
+// let executeCommandMock: jest.SpiedFunction<typeof commandUtils.executeCommand>
 let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof githubRelease.getOrCreateGitHubRelease>
-let uploadAppToGithubMock: jest.SpiedFunction<typeof tauriGithubUploader.uploadAppToGithub>
+// let uploadAppToGithubMock: jest.SpiedFunction<typeof tauriGithubUploader.uploadAppToGithub>
 
 // Keep original implementation and spy
-let buildSpied = jest.spyOn(tauriBuilder, 'build')
+const buildSpied = jest.spyOn(tauriBuilder, 'build')
 
 const THE_GITHUB_TOKEN = 'unit-test-token'
 const THE_GITHUB_OWNER = 'the-owner'
@@ -43,7 +40,7 @@ const THE_GITHUB_REPOSITORY = `${THE_GITHUB_OWNER}/${THE_GITHUB_REPO}`
 const THE_GITHUB_SHA = '4a18826a13c84325ae24d2b7c83918159319c94d'
 const THE_GITHUB_SHORT_SHA = '4a18826'
 
-const setAllValidRequiredEnvVars = () => {
+const setAllValidRequiredEnvVars = (): void => {
   test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
   test_setEnvVar('GITHUB_REPOSITORY', THE_GITHUB_REPOSITORY)
   test_setEnvVar('GITHUB_SHA', THE_GITHUB_SHA)
@@ -56,15 +53,15 @@ describe('run', () => {
     // Unset all env vars
     test_deleteAllRequiredEnvVars()
 
-    debugMock = jest.spyOn(core, 'debug').mockImplementation()
+    // debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
     getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-    executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
+    // executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
     getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockImplementation()
-    uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
+    // uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
   })
 
   test.each([
@@ -293,58 +290,3 @@ describe('run', () => {
     expect(buildSpied).not.toHaveBeenCalled()
   })
 })
-
-/*
-describe('action', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-
-    debugMock = jest.spyOn(core, 'debug').mockImplementation()
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-  })
-
-  it('sets the time output', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return '500'
-        default:
-          return ''
-      }
-    })
-
-    await main.run()
-    expect(runMock).toHaveReturned()
-
-    // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    expect(debugMock).toHaveBeenNthCalledWith(2, expect.stringMatching(timeRegex))
-    expect(debugMock).toHaveBeenNthCalledWith(3, expect.stringMatching(timeRegex))
-    expect(setOutputMock).toHaveBeenNthCalledWith(1, 'time', expect.stringMatching(timeRegex))
-    expect(errorMock).not.toHaveBeenCalled()
-  })
-
-  it('sets a failed status', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
-        default:
-          return ''
-      }
-    })
-
-    await main.run()
-    expect(runMock).toHaveReturned()
-
-    // Verify that all of the core library functions were called correctly
-    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'milliseconds not a number')
-    expect(errorMock).not.toHaveBeenCalled()
-  })
-})
- */

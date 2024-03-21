@@ -3,16 +3,16 @@ import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { tagNameFromTemplate } from './lib/github-utils/tag-template'
-import { build, bundlesFromBuildOptions, targetFromBuildOptions } from './lib/tauri-utils/tauri-builder'
+import { build, targetFromBuildOptions } from './lib/tauri-utils/tauri-builder'
 import { VERSION } from './version'
 import { uploadAppToGithub } from './lib/tauri-utils/tauri-github-uploader'
 
 export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag'
 
-const input = (name: ActionInputs, options: core.InputOptions) => core.getInput(name, options)
-const booleanInput = (name: ActionInputs, options: core.InputOptions) => core.getBooleanInput(name, options)
-const output = (name: ActionOutputs, value: any) => core.setOutput(name, value)
+const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
+const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
+const output = (name: ActionOutputs, value: string): void => core.setOutput(name, value)
 
 /**
  * The main function for the action.
