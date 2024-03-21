@@ -55,6 +55,9 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        run: npm i -g pnpm
+
       - name: Test Local Action
         id: test-action
         uses: ./
