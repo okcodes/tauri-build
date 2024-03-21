@@ -33624,6 +33624,7 @@ const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedAr
         console.log(`Found ${artifacts.length} artifacts, did compress the ones that are directories.".`, artifacts);
         // Get release where to upload the artifacts
         const octokit = new rest_1.Octokit({ auth: githubToken });
+        console.log('Will get release by tag', { owner, repo, tag });
         const release = await octokit.repos.getReleaseByTag({ owner, repo, tag });
         const uploadUrl = release.data.upload_url;
         for (const artifact of artifacts) {
@@ -33632,6 +33633,7 @@ const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedAr
         console.log(`Did upload ${artifacts.length} artifacts`, artifacts);
     }
     catch (error) {
+        console.error('Cannot upload artifacts error details:', error);
         core.setFailed(`Cannot upload artifacts: ${error.message}`);
     }
 };
@@ -33648,6 +33650,7 @@ const uploadArtifact = async ({ artifactPath, uploadUrl, githubToken, name }) =>
         console.log('Did upload artifact file', { artifactPath, name, data: response.data });
     }
     catch (error) {
+        console.error('Error uploading artifact', { artifactPath, name, uploadUrl, error });
         throw new Error(`uploadArtifact failed: "${artifactPath}": ${error.message}`, { cause: error });
     }
 };
