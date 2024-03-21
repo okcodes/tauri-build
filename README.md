@@ -1,5 +1,93 @@
 # Create a GitHub Action Using TypeScript
 
+## Example Usage
+
+```yaml
+jobs:
+  # The long tag must be calculated in a separate job because the "build" job is a matrix, and we want the same timestamp-dependent matrix jobs to share the same tag.
+  long-tag:
+    name: Get Pre-Release Long Tag
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 1
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+      - id: get-tag
+        # The pre-release branch name will be like "app-name-v0.0.0+2024.12.31T10.33.59Z-BRANCH-NAME-6a7a8dd".
+        run: |
+          echo "tag={NAME}-v{VERSION}+$(date -u '+%Y.%m.%dT%H.%M.%SZ')-${{ github.ref_name }}-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+  build:
+    needs: [long-tag]
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+        contents: 'write'
+    outputs:
+        appName: ${{ steps.tauri.outputs.appName }}
+        appVersion: ${{ steps.tauri.outputs.appVersion }}
+        tag: ${{ steps.tauri.outputs.tag }}
+    strategy:
+        fail-fast: false
+        matrix:
+          include:
+            - name: Apple Silicon
+              os: [self-hosted, macOS, X64]
+              target: aarch64-apple-darwin
+              bundles: app,dmg,updater
+              expectedArtifacts: 4 # .app + .dmg + updater + signature
+            - name: Apple Intel
+              os: [self-hosted, macOS, X64]
+              target: x86_64-apple-darwin
+              bundles: app,dmg,updater
+              expectedArtifacts: 4 # .app + .dmg + updater + signature
+            - name: Apple Universal
+              os: [self-hosted, macOS, X64]
+              target: universal-apple-darwin
+              expectedArtifacts: 4 # .app + .dmg + updater + signature
+              bundles: app,dmg,updater
+            - name: Windows 64
+              os: [self-hosted, Windows, X64]
+              target: x86_64-pc-windows-msvc
+              bundles: nsis,msi,updater
+              expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
+            - name: Windows 32
+              os: [self-hosted, Windows, X64] # Win-32 can be built from a X64 runner
+              target: i686-pc-windows-msvc
+              bundles: nsis,msi,updater
+              expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
+            - name: Windows ARM64
+              os: [self-hosted, Windows, X64] # Win ARM64 can be built from a X64 runner
+              target: aarch64-pc-windows-msvc
+              bundles: nsis,updater
+              expectedArtifacts: 3 # NSIS: (.exe + updater + signature). Only NSIS is supported in Win-ARM64.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: okcodes/tauri-release-action@tauri-integration
+        id: tauri
+        with:
+          tauriContext: ${{ github.workspace }}
+          tagTemplate: ${{ github.event_name == 'push' && needs.long-tag.outputs.tag || '{NAME}-v{VERSION}' }}
+          draft: false
+          prerelease: true
+          buildOptions: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --verbose
+          expectedArtifacts: ${{ matrix.expectedArtifacts }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - run: |
+          echo "App Name ${{ steps.tauri.outputs.appName }}"
+          echo "App Version ${{ steps.tauri.outputs.appVersion }}"
+          echo "Tag ${{ steps.tauri.outputs.tag }}"
+```
+
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 [![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
