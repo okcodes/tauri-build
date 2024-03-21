@@ -166,15 +166,18 @@ describe('run', () => {
       expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, tag)
       expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, repo: THE_GITHUB_REPO, owner: THE_GITHUB_OWNER, tag, sha: THE_GITHUB_SHA, prerelease, draft })
       expect(buildSpied).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), buildOptions)
-      expect(executeCommandMock).toHaveBeenNthCalledWith(1, 'npm install', { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+
+      const cwd = path.join(__dirname, 'test-files')
+
+      expect(executeCommandMock).toHaveBeenNthCalledWith(1, 'npm install', { cwd })
       if (expectedTarget !== 'universal-apple-darwin') {
-        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add ${expectedTarget}`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(3, expectedBuildCommand, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add ${expectedTarget}`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, expectedBuildCommand, { cwd })
       } else {
         // On apple universal we install an additional rust target, so we make an extra command call
-        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add x86_64-apple-darwin`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files' })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add x86_64-apple-darwin`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd })
       }
       expect(uploadAppToGithubMock).toHaveBeenCalledTimes(1)
       expect(uploadAppToGithubMock).toHaveBeenNthCalledWith(1, {
@@ -186,7 +189,7 @@ describe('run', () => {
         repo: 'the-repo',
         rustTarget: expectedTarget,
         tag,
-        tauriContext: '/Users/z/Desktop/dev/tauri-release-action/__tests__/test-files',
+        tauriContext: cwd,
       })
       expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
       expect(setFailedMock).not.toHaveBeenCalled()
