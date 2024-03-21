@@ -33283,14 +33283,39 @@ exports.test_setEnvVar = test_setEnvVar;
 /***/ }),
 
 /***/ 2535:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getOrCreateGitHubRelease = void 0;
 const rest_1 = __nccwpck_require__(5375);
+const core = __importStar(__nccwpck_require__(2186));
 const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
+    core.startGroup('GET OR CREATE RELEASE');
     const octokit = new rest_1.Octokit({ auth: githubToken });
     try {
         // First try to get release by tag. If not found, create it.
@@ -33316,6 +33341,9 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
             prerelease,
         });
         console.log(`Did create release with tag "${tag}". ID: ${createReleaseResponse.data.id}`);
+    }
+    finally {
+        core.endGroup();
     }
 };
 exports.getOrCreateGitHubRelease = getOrCreateGitHubRelease;
@@ -33359,6 +33387,29 @@ exports.tagNameFromTemplate = tagNameFromTemplate;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -33367,8 +33418,11 @@ exports.parseTauriCargoTomlFileInContext = exports.parseCargoTomlFile = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const toml_1 = __nccwpck_require__(2901);
+const core = __importStar(__nccwpck_require__(2186));
 const parseCargoTomlFile = async (cargoTomlPath) => {
     try {
+        core.startGroup('GET RUST APP INFO');
+        console.log('Will parse toml file', cargoTomlPath);
         const toml = (await fs_1.promises.readFile(cargoTomlPath)).toString('utf-8');
         const appInfo = (0, toml_1.parse)(toml);
         return {
@@ -33382,6 +33436,9 @@ const parseCargoTomlFile = async (cargoTomlPath) => {
     }
     catch (error) {
         throw new Error(`Cannot read or parse toml file: ${error.message}`, { cause: error });
+    }
+    finally {
+        core.endGroup();
     }
 };
 exports.parseCargoTomlFile = parseCargoTomlFile;
@@ -33399,6 +33456,29 @@ exports.parseTauriCargoTomlFileInContext = parseTauriCargoTomlFileInContext;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -33407,6 +33487,7 @@ exports.bundlesFromBuildOptions = exports.targetFromBuildOptions = exports.build
 const command_utils_1 = __nccwpck_require__(1470);
 const tauri_utils_1 = __nccwpck_require__(4105);
 const yargs_1 = __importDefault(__nccwpck_require__(8822));
+const core = __importStar(__nccwpck_require__(2186));
 const RESET = '\x1b[0m';
 const GREEN = '\x1b[32m';
 const RED = '\x1b[31m';
@@ -33418,6 +33499,7 @@ const build = async (tauriContext, buildOptions) => {
     const packageManager = (0, tauri_utils_1.getPackageManager)(tauriContext);
     let command = '';
     try {
+        core.startGroup('BUILD TAURI APP');
         // Install node deps
         command = `${packageManager} install`;
         console.log(`${GREEN}Will install node dependencies${RESET}`, { command });
@@ -33451,6 +33533,9 @@ const build = async (tauriContext, buildOptions) => {
     catch (error) {
         console.log(`${RED}Build failed when running command${RESET}`, { command });
         throw new Error(`Error building: ${error.message}`, { cause: error });
+    }
+    finally {
+        core.endGroup();
     }
 };
 exports.build = build;
@@ -33579,6 +33664,7 @@ const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }) => {
 exports.getAssetMeta = getAssetMeta;
 const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }) => {
     try {
+        core.startGroup('UPLOAD APP TO GITHUB');
         const artifactsPattern = `src-tauri/target/${rustTarget}/release/bundle/**/${appName}*.{${knownExtensions.join(',')}}`;
         // Find files to upload
         const artifactRelativePaths = await (0, glob_1.glob)(artifactsPattern, { cwd: tauriContext });
@@ -33626,7 +33712,9 @@ const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedAr
         const octokit = new rest_1.Octokit({ auth: githubToken });
         console.log('Will get release by tag', { owner, repo, tag });
         const release = await octokit.repos.getReleaseByTag({ owner, repo, tag });
+        console.log('Did get release by tag', { owner, repo, tag, releaseId: release.data.id });
         const uploadUrl = release.data.upload_url;
+        console.log(`Will upload ${artifacts.length} artifacts`, artifacts);
         for (const artifact of artifacts) {
             await uploadArtifact({ artifactPath: artifact.path, githubToken, uploadUrl, name: artifact.assetName });
         }
@@ -33635,6 +33723,9 @@ const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedAr
     catch (error) {
         console.error('Cannot upload artifacts error details:', error);
         core.setFailed(`Cannot upload artifacts: ${error.message}`);
+    }
+    finally {
+        core.endGroup();
     }
 };
 exports.uploadAppToGithub = uploadAppToGithub;
