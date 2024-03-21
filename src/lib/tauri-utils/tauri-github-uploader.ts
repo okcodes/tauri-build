@@ -155,7 +155,9 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
     const octokit = new Octokit({ auth: githubToken })
     console.log('Will get release by tag', { owner, repo, tag })
     const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
+    console.log('Did get release by tag', { owner, repo, tag, releaseId: release.data.id })
     const uploadUrl = release.data.upload_url
+    console.log(`Will upload ${artifacts.length} artifacts`, artifacts)
     for (const artifact of artifacts) {
       await uploadArtifact({ artifactPath: artifact.path, githubToken, uploadUrl, name: artifact.assetName })
     }
