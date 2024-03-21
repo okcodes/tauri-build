@@ -73,4 +73,7 @@ jobs:
 
       - name: Print Output
         id: output
-        run: echo "${{ steps.test-action.outputs.time }}"
+        run: |
+          echo "App Name: ${{ steps.test-action.outputs.appName }}"
+          echo "App Version: ${{ steps.test-action.outputs.appVersion }}"
+          echo "Tag: ${{ steps.test-action.outputs.tag }}"
