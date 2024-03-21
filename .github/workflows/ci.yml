@@ -64,7 +64,7 @@ jobs:
         with:
           tauriContext: ./micro-demo/
           tagTemplate: '{NAME}-v{VERSION}'
-          draft: true
+          draft: false
           prerelease: true
           buildOptions: --target x86_64-apple-darwin --bundles app,dmg --verbose
           expectedArtifacts: 2
