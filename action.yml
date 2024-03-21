@@ -4,20 +4,37 @@ author: 'Your name or organization here'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'package'
+  color: 'yellow'
 
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  tauriContext:
+    description: 'Folder to the source code of the app. A file "src-tauri/Cargo.toml" must exist inside that folder.'
     required: true
-    default: '1000'
+  buildOptions:
+    description: Options sent to the tauri build command. You must specify the "--target" flag. E.g., "--target aarch64-apple-darwin --bundles 'app,dmg,updater'". Run "pnpm run build --help" for more info.
+    required: true
+  expectedArtifacts:
+    description: The expected number of app files to find after the build. The action fails if this number is not met.
+    required: true
+  tagTemplate:
+    description: 'Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in "src-tauri/Cargo.toml".'
+    required: true
+  prerelease:
+    description: 'If the GitHub release to create should be marked as prerelease.'
+    required: true
+  draft:
+    description: 'If the GitHub release to create should be marked as draft.'
+    required: true
 
 # Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  appName:
+    description: 'Name of the app as defined in the "src-tauri/Cargo.toml" file.'
+  appVersion:
+    description: 'Version of the app as defined in the "src-tauri/Cargo.toml" file.'
+  tag:
+    description: 'Tag used in the GitHub release.'
 
 runs:
   using: node20

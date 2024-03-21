@@ -1,0 +1,6 @@
+[package]
+name = "my-app-under-test"
+version = "7.7.7"
+description = "Demo cargo file."
+authors = ["you"]
+edition = "2021"

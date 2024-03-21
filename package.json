@@ -24,19 +24,21 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "npm run package && node ./dist/index.js",
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "npx jest",
+    "ci-test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
     "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
     "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "package:watch": "npm run package -- --watch",
-    "test": "npx jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
   "license": "MIT",
   "jest": {
+    "silent": true,
     "preset": "ts-jest",
     "verbose": true,
     "clearMocks": true,
@@ -66,14 +68,21 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.10.1"
+    "@actions/core": "^1.10.1",
+    "@iarna/toml": "^2.2.5",
+    "@octokit/rest": "^20.0.2",
+    "execa": "^8.0.1",
+    "glob": "^10.3.10",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/iarna__toml": "^2.0.5",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.28",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "@vercel/ncc": "^0.38.1",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-plugin-github": "^4.10.2",
     "eslint-plugin-jest": "^27.9.0",

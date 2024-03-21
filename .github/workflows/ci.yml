@@ -46,19 +46,34 @@ jobs:
 
   test-action:
     name: GitHub Actions Test
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+    permissions:
+      contents: 'write'
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        run: npm i -g pnpm
+
       - name: Test Local Action
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          tauriContext: ./micro-demo/
+          tagTemplate: '{NAME}-v{VERSION}'
+          draft: false
+          prerelease: true
+          buildOptions: --target x86_64-apple-darwin --bundles app,dmg --verbose
+          expectedArtifacts: 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print Output
         id: output
-        run: echo "${{ steps.test-action.outputs.time }}"
+        run: |
+          echo "App Name: ${{ steps.test-action.outputs.appName }}"
+          echo "App Version: ${{ steps.test-action.outputs.appVersion }}"
+          echo "Tag: ${{ steps.test-action.outputs.tag }}"
