@@ -38,3 +38,7 @@ export const getUpdaterExtension = (filename: string): ArtifactExtension | undef
 export const getSignatureExtension = (filename: string): ArtifactExtension | undefined => {
   return signatureExtensions.find(ext => filename.endsWith(ext))
 }
+
+export const findNameWithExtension = <T extends string>(names: T[], ext: ArtifactExtension): T | undefined => {
+  return names.find(name => name.endsWith(ext)) // TODO: All the ends with ext must assert end with ., also break fns and assert they're unit tested
+}

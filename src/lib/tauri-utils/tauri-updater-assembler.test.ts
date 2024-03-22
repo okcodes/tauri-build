@@ -1,6 +1,6 @@
-import { AssetName, SignatureAssetsMap, getTauriTargetToSignatureAssetsMap, getTauriTargetsFromAssets, TauriTarget, OsArchToSignatureAsset, getOsArchsFromAssets, OS_Arch } from './tauri-updater-assembler'
+import { AssetName, SignatureAssetsMap, getTauriTargetToSignatureAssetsMap, getTauriTargetsFromAssets, TauriTarget, OsArchToSignatureAsset, getOsArchsFromAssets, OS_Arch, SignatureAssetName } from './tauri-updater-assembler'
 
-const allNames: AssetName[] = [
+const allAssets: AssetName[] = [
   // macOS Silicon (darwin-aarch64)
   'aarch64-apple-darwin.xxx_0.0.18_aarch64.app.tar.gz',
   'aarch64-apple-darwin.xxx_0.0.18_aarch64.dmg',
@@ -36,8 +36,24 @@ const allNames: AssetName[] = [
   'aarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.updater.nsis.zip.sig',
 ]
 
+const allSignatureAssets: SignatureAssetName[] = [
+  // macOS Silicon (darwin-aarch64)
+  'aarch64-apple-darwin.xxx_0.0.18_aarch64.updater.app.tar.gz.sig',
+  // macOS Intel (darwin-x86_64)
+  'x86_64-apple-darwin.xxx_0.0.18_x64.updater.app.tar.gz.sig',
+  // macOS Universal (darwin-aarch64, darwin-x86_64)
+  'universal-apple-darwin.xxx_0.0.18_universal.updater.app.tar.gz.sig',
+  // Windows 64 (windows-x86_64)
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64-setup.updater.nsis.zip.sig',
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64_en-US.updater.msi.zip.sig',
+  // Windows 32 (windows-i686)
+  'i686-pc-windows-msvc.xxx_0.0.18_x86-setup.updater.nsis.zip.sig',
+  'i686-pc-windows-msvc.xxx_0.0.18_x86_en-US.updater.msi.zip.sig',
+  // Windows ARM64 (windows-aarch64)
+  'aarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.updater.nsis.zip.sig',
+]
+
 type TestCase = {
-  description: string
   names: AssetName[]
   preferUniversal: boolean
   preferNsis: boolean
@@ -46,8 +62,7 @@ type TestCase = {
 
 const testCases: TestCase[] = [
   {
-    description: 'All names',
-    names: allNames,
+    names: allSignatureAssets,
     preferUniversal: false,
     preferNsis: false,
     expectedSignatureAssets: {
@@ -75,7 +90,7 @@ const testCases: TestCase[] = [
 
 describe('getTauriTargetToSignatureAssetsMap', () => {
   it('Returns only the asset names that are signatures', () => {
-    const signatureAssets: SignatureAssetsMap = getTauriTargetToSignatureAssetsMap(allNames)
+    const signatureAssets: SignatureAssetsMap = getTauriTargetToSignatureAssetsMap(allAssets)
     const expected: SignatureAssetsMap = {
       // macOS Silicon (darwin-aarch64)
       'aarch64-apple-darwin': ['aarch64-apple-darwin.xxx_0.0.18_aarch64.updater.app.tar.gz.sig'],
@@ -95,27 +110,27 @@ describe('getTauriTargetToSignatureAssetsMap', () => {
   })
 
   it('When asset name has invalid OS_ARCH prefix, they are not included as signature assets', () => {
-    const signatureAssets: SignatureAssetsMap = getTauriTargetToSignatureAssetsMap(allNames.map(name => `INVALIDATE-${name}`))
+    const signatureAssets: SignatureAssetsMap = getTauriTargetToSignatureAssetsMap(allAssets.map(name => `INVALIDATE-${name}`))
     expect(signatureAssets).toEqual({})
   })
 })
 
 describe('getTauriTargetsFromAssets', () => {
   it('Returns the correct targets', () => {
-    const rustTargets: Set<TauriTarget> = getTauriTargetsFromAssets(allNames)
+    const rustTargets: Set<TauriTarget> = getTauriTargetsFromAssets(allAssets)
     const expectedRustTargets: Set<TauriTarget> = new Set<TauriTarget>(['aarch64-apple-darwin', 'x86_64-apple-darwin', 'universal-apple-darwin', 'x86_64-pc-windows-msvc', 'i686-pc-windows-msvc', 'aarch64-pc-windows-msvc'])
     expect(rustTargets).toEqual(expectedRustTargets)
   })
 
   it('Invalid asset names must return no rust targets', () => {
-    const signatureAssets: Set<TauriTarget> = getTauriTargetsFromAssets(allNames.map(name => `INVALIDATE-${name}`))
+    const signatureAssets: Set<TauriTarget> = getTauriTargetsFromAssets(allAssets.map(name => `INVALIDATE-${name}`))
     expect(signatureAssets).toEqual(new Set<TauriTarget>())
   })
 })
 
 describe('getOsArchsFromAssets', () => {
   const testCases: { description: string; assetNames: AssetName[]; expected: Set<OS_Arch> }[] = [
-    { description: 'all', assetNames: allNames, expected: new Set<OS_Arch>(['darwin-aarch64', 'darwin-x86_64', 'windows-x86_64', 'windows-i686', 'windows-aarch64']) },
+    { description: 'all', assetNames: allAssets, expected: new Set<OS_Arch>(['darwin-aarch64', 'darwin-x86_64', 'windows-x86_64', 'windows-i686', 'windows-aarch64']) },
     {
       description: 'apple universal',
       assetNames: ['universal-apple-darwin.xxx_0.0.18_universal.updater.app.tar.gz.sig'],
@@ -158,7 +173,7 @@ describe('getOsArchsFromAssets', () => {
     },
     {
       description: 'all invalid',
-      assetNames: allNames.map(name => `INVALIDATE-${name}`) as AssetName[],
+      assetNames: allAssets.map(name => `INVALIDATE-${name}`) as AssetName[],
       expected: new Set<OS_Arch>(),
     },
   ]

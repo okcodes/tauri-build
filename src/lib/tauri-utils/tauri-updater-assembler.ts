@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest'
+import { findNameWithExtension } from './tauri-extensions'
 
 type OS = 'darwin' | 'linux' | 'windows'
 type Arch = 'aarch64' | 'armv7' | 'i686' | 'x86_64'
@@ -13,7 +14,7 @@ export type RustTargetTriple = 'aarch64-apple-darwin' | 'x86_64-apple-darwin' | 
 export type TauriTarget = RustTargetTriple | 'universal-apple-darwin'
 
 export type AssetName = `${TauriTarget}.${string}`
-type SignatureAssetName = `${TauriTarget}.${string}.sig`
+export type SignatureAssetName = `${TauriTarget}.${string}.sig`
 
 // If this target was compiled, it gives support to these platforms
 const RUST_TARGET_TRIPLE_TO_OS_ARCH: Record<RustTargetTriple, OS_Arch> = {
@@ -95,12 +96,23 @@ export const getOsArchsFromAssets = (names: string[]): Set<OS_Arch> => {
   return result
 }
 
-export const getSignatureOsArch = ({ signatures, osArch, preferNsis, preferUniversal }: { osArch: OS_Arch; signatures: SignatureAssetsMap; preferUniversal: boolean; preferNsis: boolean }): SignatureAssetName | undefined => {
-  if (osArch === 'darwin-aarch64' || osArch === 'darwin-x86_64') {
-    return preferUniversal ? signatures['universal-apple-darwin']?.[0] : signatures[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
-  } else {
-    return signatures[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
+export const getSignatureForOsArch = ({ assetNames, osArch, preferNsis, preferUniversal }: { osArch: OS_Arch; assetNames: SignatureAssetsMap; preferUniversal: boolean; preferNsis: boolean }): SignatureAssetName | undefined => {
+  if (osArch.startsWith('darwin')) {
+    // On macOS, we might end up with an extra build, the universal. If universal signature is preferred use that one.
+    const universalSignature: SignatureAssetName | undefined = assetNames['universal-apple-darwin']?.[0]
+    const platformSignature: SignatureAssetName | undefined = assetNames[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
+    return preferUniversal ? universalSignature || platformSignature : platformSignature || universalSignature
   }
+
+  if (osArch.startsWith('windows')) {
+    // If we have msi+nsis one, find if we have available the preferred one.
+    const matchingSignatures: SignatureAssetName[] = assetNames[OS_ARCH_TO_RUST_TARGET[osArch]] || []
+    const nsisSignature: SignatureAssetName | undefined = findNameWithExtension(matchingSignatures, 'nsis.zip.sig')
+    const msiSignature: SignatureAssetName | undefined = findNameWithExtension(matchingSignatures, 'msi.zip.sig')
+    return preferNsis ? nsisSignature || msiSignature : msiSignature || nsisSignature
+  }
+
+  return assetNames[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
 }
 
 type AssembleUpdaterParams = {
