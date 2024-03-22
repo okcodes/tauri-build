@@ -2,8 +2,14 @@ import { Octokit } from '@octokit/rest'
 
 type OS = 'darwin' | 'linux' | 'windows'
 type Arch = 'aarch64' | 'armv7' | 'i686' | 'x86_64'
-export type OS_Arch = `${OS}-${Arch}`
+
+// Excluding 2 os-archs not defined in tauri docs
+export type InvalidOs_Arch = 'darwin-armv7' | 'darwin-i686'
+
+export type OS_Arch = Exclude<`${OS}-${Arch}`, InvalidOs_Arch>
+
 export type RustTargetTriple = 'aarch64-apple-darwin' | 'x86_64-apple-darwin' | 'aarch64-pc-windows-msvc' | 'i686-pc-windows-msvc' | 'x86_64-pc-windows-msvc'
+
 export type TauriTarget = RustTargetTriple | 'universal-apple-darwin'
 
 export type AssetName = `${TauriTarget}.${string}`
@@ -82,9 +88,6 @@ export const getOsArchsFromAssets = (names: string[]): Set<OS_Arch> => {
     if (tauriTarget === 'universal-apple-darwin') {
       result.add('darwin-aarch64')
       result.add('darwin-x86_64')
-      // These 2 are not defined in tauri docs, so they're commented out
-      // result.add('darwin-armv7')
-      // result.add('darwin-i686')
     } else {
       result.add(RUST_TARGET_TRIPLE_TO_OS_ARCH[tauriTarget])
     }
@@ -93,7 +96,7 @@ export const getOsArchsFromAssets = (names: string[]): Set<OS_Arch> => {
 }
 
 export const getSignatureOsArch = ({ signatures, osArch, preferNsis, preferUniversal }: { osArch: OS_Arch; signatures: SignatureAssetsMap; preferUniversal: boolean; preferNsis: boolean }): SignatureAssetName | undefined => {
-  if (osArch === 'darwin-aarch64' || osArch === 'darwin-x86_64' || osArch === 'darwin-i686' || osArch === 'darwin-armv7') {
+  if (osArch === 'darwin-aarch64' || osArch === 'darwin-x86_64') {
     return preferUniversal ? signatures['universal-apple-darwin']?.[0] : signatures[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
   } else {
     return signatures[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
@@ -112,8 +115,6 @@ export const assembleUpdater = async ({ githubToken, appVersion }: AssembleUpdat
     notes: `Version ${appVersion} brings enhancements and bug fixes for improved performance and stability.`,
     pub_date: new Date().toISOString(),
     platforms: {
-      'darwin-i686': { url: '', signature: '' },
-      'darwin-armv7': { url: '', signature: '' },
       'darwin-aarch64': { url: '', signature: '' },
       'darwin-x86_64': { url: '', signature: '' },
     },
