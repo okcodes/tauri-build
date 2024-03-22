@@ -1,6 +1,6 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Tauri Release'
+description: 'Build a Tauri App and upload the bundled binaries and artifacts to a GitHub release.'
+author: 'okcodes'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
