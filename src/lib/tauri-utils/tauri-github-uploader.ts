@@ -4,7 +4,7 @@ import fs from 'fs'
 import * as core from '@actions/core'
 import { executeCommand } from '../command-utils/command-utils'
 import { Octokit } from '@octokit/rest'
-import { ArtifactExtension, COMPRESS_EXT, knownExtensions } from './tauri-extensions'
+import { COMPRESS_EXTENSION, getSignatureExtension, getUpdaterExtension, isMacVersionlessArtifact, knownExtensions, UPDATER_EXTENSION } from './tauri-extensions'
 
 type UploadAppToGithubArgs = {
   rustTarget: string
@@ -18,23 +18,6 @@ type UploadAppToGithubArgs = {
   tag: string
 }
 
-const macVersionlessExt: readonly ArtifactExtension[] = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig'])
-
-const updaterExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip'])
-const signatureExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig'])
-
-const isMacVersionlessArtifact = (filename: string) => {
-  return macVersionlessExt.some(ext => filename.endsWith(ext))
-}
-
-const getUpdaterExtension = (filename: string): ArtifactExtension | undefined => {
-  return updaterExtensions.find(ext => filename.endsWith(ext))
-}
-
-const getSignatureExtension = (filename: string): ArtifactExtension | undefined => {
-  return signatureExtensions.find(ext => filename.endsWith(ext))
-}
-
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
 const rustTargetToMacSuffixMap: Record<string, string> = {
   'aarch64-apple-darwin': 'aarch64',
@@ -46,8 +29,6 @@ const rustTargetToMacBasenameSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
-const UPDATER_PREFIX = '.updater'
-
 export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const updaterExt = getUpdaterExtension(filePath)
   const isUpdater = !!updaterExt
@@ -55,7 +36,7 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
   const isSignature = !!signatureExt
 
   // Updaters and signatures use a prefix before the file basename.
-  const updaterSuffix = isUpdater || isSignature ? UPDATER_PREFIX : ''
+  const updaterSuffix = isUpdater || isSignature ? UPDATER_EXTENSION : ''
 
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
@@ -111,7 +92,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
       // Prepare compressed path
       const artifactDir = path.dirname(artifact.path)
       const artifactBasename = path.basename(artifact.path)
-      const zArtifactPath = path.join(artifactDir, `__zipped__${artifactBasename}${COMPRESS_EXT}`)
+      const zArtifactPath = path.join(artifactDir, `__zipped__${artifactBasename}${COMPRESS_EXTENSION}`)
 
       // Fail if the compressed file already exist, preventing overriding existing data
       if (fs.existsSync(zArtifactPath)) {
@@ -126,7 +107,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
 
       // Replace artifact original name with the name after compressing it.
       artifacts[i]!.path = zArtifactPath // The artifact to upload now is the zipped one
-      artifacts[i]!.assetName += COMPRESS_EXT // Append zipped ext to asset name
+      artifacts[i]!.assetName += COMPRESS_EXTENSION // Append zipped ext to asset name
     }
 
     // Upload each artifact
