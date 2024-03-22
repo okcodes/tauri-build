@@ -6,9 +6,11 @@ GitHub action that:
 - Creates a GitHub release automatically.
 - Uploads the artifacts to the GitHub Release.
 
-It supports the [Apple Signing and Notarization](https://tauri.app/v1/guides/distribution/sign-macos/) process, you just need to pass these environment variables to the action `APPLE_SIGNING_IDENTITY`, `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
+It supports the [Apple Signing and Notarization](https://tauri.app/v1/guides/distribution/sign-macos/) process, you just need to pass these environment variables to the action `APPLE_SIGNING_IDENTITY`, `APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
 
-The [generation of the updater binaries and updater signatures](https://tauri.app/v1/guides/distribution/updater/) is also supported, the action will automatically detect them and upload them to GitHub. You just need to pass the `TAURI_PRIVATE_KEY` and `TAURI_KEY_PASSWORD` environment variables as described in the [tauri docs](https://tauri.app/v1/guides/distribution/updater/).
+The [generation of the updater binaries and updater signatures](https://tauri.app/v1/guides/distribution/updater/) is also supported, the action will automatically detect them and upload them to GitHub. You just need to pass the
+`TAURI_PRIVATE_KEY` and `TAURI_KEY_PASSWORD` environment variables as described in the [tauri docs](https://tauri.app/v1/guides/distribution/updater/).
 
 ## Example Usage
 
