@@ -61,7 +61,7 @@ export const runBuildAppCommand = async (): Promise<void> => {
     }
 
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY }, new Date().toTimeString())
+    console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY })
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
