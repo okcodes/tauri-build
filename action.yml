@@ -8,6 +8,9 @@ branding:
   color: 'yellow'
 
 inputs:
+  command:
+    description: 'Command to run. Can be either "build-app" or "assemble-updater".'
+    required: true
   tauriContext:
     description: 'Folder to the source code of the app. A file "src-tauri/Cargo.toml" must exist inside that folder.'
     required: true
@@ -26,6 +29,18 @@ inputs:
   draft:
     description: 'If the GitHub release to create should be marked as draft.'
     required: true
+  appVersion:
+    description: 'Version of the app used to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
+  preferUniversal:
+    description: 'If the macOS universal bundle of the app will be preferred over the platform-specific one to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'false'
+  preferNsis:
+    description: 'If the NSIS app updater will be preferred over the MSI one to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'false'
 
 # Define your outputs here.
 outputs:
