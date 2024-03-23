@@ -61,7 +61,7 @@ describe('run', () => {
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
-    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockImplementation()
+    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockResolvedValue({ uploadUrl: 'https://example.com/upload-url' })
     uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
   })
 
@@ -188,10 +188,8 @@ describe('run', () => {
         appVersion: '7.7.7',
         expectedArtifacts: +expectedArtifacts,
         githubToken: 'unit-test-token',
-        owner: 'the-owner',
-        repo: 'the-repo',
         rustTarget: expectedTarget,
-        tag,
+        uploadUrl: 'https://example.com/upload-url',
         tauriContext: cwd,
       })
       expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
