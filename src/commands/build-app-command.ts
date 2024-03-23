@@ -13,7 +13,7 @@ const input = (name: BuildAppActionInputs, options: core.InputOptions): string =
 const booleanInput = (name: BuildAppActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 const output = (name: BuildAppActionOutputs, value: string): void => core.setOutput(name, value)
 
-export const runBuildAppCommand = async () => {
+export const runBuildAppCommand = async (): Promise<void> => {
   console.log(`Running Build App Command`)
 
   try {

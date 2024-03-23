@@ -1,3 +1,3 @@
-export const runAssembleUpdaterCommand = async () => {
+export const runAssembleUpdaterCommand = async (): Promise<void> => {
   console.log('Running Assemble Updater Command')
 }
