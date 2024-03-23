@@ -40,6 +40,38 @@ const allAssets: string[] = [
   'INVALIDaarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.updater.nsis.zip.sig',
 ]
 
+const allAssetsWithoutSignatures: string[] = [
+  // macOS Silicon (darwin-aarch64)
+  'aarch64-apple-darwin.xxx_0.0.18_aarch64.app.tar.gz',
+  'aarch64-apple-darwin.xxx_0.0.18_aarch64.dmg',
+  'aarch64-apple-darwin.xxx_0.0.18_aarch64.updater.app.tar.gz',
+  // macOS Intel (darwin-x86_64)
+  'x86_64-apple-darwin.xxx_0.0.18_x64.app.tar.gz',
+  'x86_64-apple-darwin.xxx_0.0.18_x64.dmg',
+  'x86_64-apple-darwin.xxx_0.0.18_x64.updater.app.tar.gz',
+  // macOS Universal (darwin-aarch64, darwin-x86_64)
+  'universal-apple-darwin.xxx_0.0.18_universal.app.tar.gz',
+  'universal-apple-darwin.xxx_0.0.18_universal.dmg',
+  'universal-apple-darwin.xxx_0.0.18_universal.updater.app.tar.gz',
+  // Windows 64 (windows-x86_64)
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64-setup.exe',
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64-setup.updater.nsis.zip',
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64_en-US.msi',
+  'x86_64-pc-windows-msvc.xxx_0.0.18_x64_en-US.updater.msi.zip',
+  // Windows 32 (windows-i686)
+  'i686-pc-windows-msvc.xxx_0.0.18_x86-setup.exe',
+  'i686-pc-windows-msvc.xxx_0.0.18_x86-setup.updater.nsis.zip',
+  'i686-pc-windows-msvc.xxx_0.0.18_x86_en-US.msi',
+  'i686-pc-windows-msvc.xxx_0.0.18_x86_en-US.updater.msi.zip',
+  // Windows ARM64 (windows-aarch64)
+  'aarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.exe',
+  'aarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.updater.nsis.zip',
+  // Invalid Random Assets
+  'an-asset.txt',
+  'README.md',
+  'INVALIDaarch64-pc-windows-msvc.xxx_0.0.18_arm64-setup.updater.nsis.zip.sig',
+]
+
 describe('assembleSemiUpdater', () => {
   type TestCase = {
     description: string
@@ -209,7 +241,7 @@ describe('assembleSemiUpdater', () => {
       description: 'empty platforms block if no signatures available (no prefer)',
       appVersion: '1.2.3',
       pubDate: new Date('2025-01-12T05:00:03Z').toString(),
-      assetNames: [],
+      assetNames: allAssetsWithoutSignatures,
       preferUniversal: false,
       preferNsis: false,
       expected: {
@@ -223,7 +255,7 @@ describe('assembleSemiUpdater', () => {
       description: 'empty platforms block if no signatures available (prefer)',
       appVersion: '4.5.6',
       pubDate: new Date('2014-01-02T22:44:04Z').toString(),
-      assetNames: [],
+      assetNames: allAssetsWithoutSignatures,
       preferUniversal: true,
       preferNsis: true,
       expected: {
