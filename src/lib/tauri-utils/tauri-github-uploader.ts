@@ -13,9 +13,7 @@ type UploadAppToGithubArgs = {
   expectedArtifacts: number
   appVersion: string
   githubToken: string
-  repo: string
-  owner: string
-  tag: string
+  uploadUrl: string
 }
 
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
@@ -55,7 +53,7 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
   return { assetName, isUpdater, isSignature }
 }
 
-export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }: UploadAppToGithubArgs): Promise<void> => {
+export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }: UploadAppToGithubArgs): Promise<void> => {
   try {
     core.startGroup('UPLOAD APP TO GITHUB')
 
@@ -111,14 +109,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
     }
 
     // Upload each artifact
-    console.log(`Found ${artifacts.length} artifacts, did compress the ones that are directories.".`, artifacts)
-    // Get release where to upload the artifacts
-    const octokit = new Octokit({ auth: githubToken })
-    console.log('Will get release by tag', { owner, repo, tag })
-    const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
-    console.log('Did get release by tag', { owner, repo, tag, release: release.data })
-    const uploadUrl = release.data.upload_url
-    console.log(`Will upload ${artifacts.length} artifacts`, artifacts)
+    console.log(`Found ${artifacts.length} artifacts, did compress the ones that are directories. Will upload.`, artifacts)
     for (const artifact of artifacts) {
       await uploadArtifact({ artifactPath: artifact.path, githubToken, uploadUrl, name: artifact.assetName })
     }

@@ -65,10 +65,10 @@ export const runBuildAppCommand = async (): Promise<void> => {
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
-    await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
+    const { uploadUrl } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
     const { target: rustTarget } = await build(tauriContext, buildOptions)
     const { name: appName, version: appVersion } = appInfo.package
-    await uploadAppToGithub({ owner, repo, tag, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
+    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
 
     output('appName', appName)
     output('appVersion', appVersion)
