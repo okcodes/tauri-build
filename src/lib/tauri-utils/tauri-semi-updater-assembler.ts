@@ -3,7 +3,7 @@ import { findNameWithExtension } from './tauri-extensions'
 type OS = 'darwin' | 'linux' | 'windows'
 type Arch = 'aarch64' | 'armv7' | 'i686' | 'x86_64'
 type InvalidOs_Arch = 'darwin-armv7' | 'darwin-i686' // Excluding 2 os-archs not defined in tauri docs
-type OS_Arch = Exclude<`${OS}-${Arch}`, InvalidOs_Arch>
+export type OS_Arch = Exclude<`${OS}-${Arch}`, InvalidOs_Arch>
 type RustTargetTriple = 'aarch64-apple-darwin' | 'x86_64-apple-darwin' | 'aarch64-pc-windows-msvc' | 'i686-pc-windows-msvc' | 'x86_64-pc-windows-msvc'
 type TauriTarget = RustTargetTriple | 'universal-apple-darwin'
 
