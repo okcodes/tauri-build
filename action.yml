@@ -50,6 +50,8 @@ outputs:
     description: 'Version of the app as defined in the "src-tauri/Cargo.toml" file.'
   tag:
     description: 'Tag used in the GitHub release.'
+  releaseId:
+    description: 'ID of the release obtained or created where the app assets were uploaded after building the app.'
 
 runs:
   using: node20

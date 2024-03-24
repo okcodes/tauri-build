@@ -61,7 +61,7 @@ describe('run', () => {
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
-    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockResolvedValue({ uploadUrl: 'https://example.com/upload-url' })
+    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockResolvedValue({ uploadUrl: 'https://example.com/upload-url', releaseId: 1234567890 })
     uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
   })
 
@@ -164,9 +164,11 @@ describe('run', () => {
       expect(runMock).toHaveReturned()
 
       // Verify that all the core library functions were called correctly
+      expect(setOutputMock).toHaveBeenCalledTimes(4)
       expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as BuildAppActionOutputs, 'my-app-under-test')
       expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as BuildAppActionOutputs, '7.7.7')
       expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as BuildAppActionOutputs, tag)
+      expect(setOutputMock).toHaveBeenNthCalledWith(4, 'releaseId' as BuildAppActionOutputs, '1234567890')
       expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, repo: THE_GITHUB_REPO, owner: THE_GITHUB_OWNER, tag, sha: THE_GITHUB_SHA, prerelease, draft })
       expect(buildSpied).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), buildOptions)
 

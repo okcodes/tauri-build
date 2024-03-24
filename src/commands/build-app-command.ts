@@ -7,16 +7,15 @@ import { getOrCreateGitHubRelease } from '../lib/github-utils/github-release'
 import { uploadAppToGithub } from '../lib/tauri-utils/tauri-github-uploader'
 
 export type BuildAppActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft'
-export type BuildAppActionOutputs = 'appName' | 'appVersion' | 'tag'
+export type BuildAppActionOutputs = 'appName' | 'appVersion' | 'tag' | 'releaseId'
 
 const input = (name: BuildAppActionInputs, options: core.InputOptions): string => core.getInput(name, options)
 const booleanInput = (name: BuildAppActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 const output = (name: BuildAppActionOutputs, value: string): void => core.setOutput(name, value)
 
 export const runBuildAppCommand = async (): Promise<void> => {
-  console.log(`Running Build App Command`)
-
   try {
+    console.log(`Running Build App Command`)
     const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA } = getRequiredEnvVars()
 
     if (!GITHUB_TOKEN) {
@@ -65,7 +64,7 @@ export const runBuildAppCommand = async (): Promise<void> => {
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
-    const { uploadUrl } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
+    const { uploadUrl, releaseId } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
     const { target: rustTarget } = await build(tauriContext, buildOptions)
     const { name: appName, version: appVersion } = appInfo.package
     await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
@@ -73,6 +72,7 @@ export const runBuildAppCommand = async (): Promise<void> => {
     output('appName', appName)
     output('appVersion', appVersion)
     output('tag', tag)
+    output('releaseId', String(releaseId))
   } catch (error) {
     // Fail the workflow run if an error occurs
     core.setFailed((error as Error).message)

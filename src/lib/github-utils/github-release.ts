@@ -15,7 +15,7 @@ type Params = {
   draft: boolean
 }
 
-export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<{ uploadUrl: string }> => {
+export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<{ uploadUrl: string; releaseId: number }> => {
   const octokit = new Octokit({ auth: githubToken })
   core.startGroup('GET OR CREATE RELEASE')
   try {
@@ -23,7 +23,7 @@ export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, 
     console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag })
     const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
     console.log(`Did get existing release with tag "${tag}".`, { owner, repo, tag, release: release.data })
-    return { uploadUrl: release.data.upload_url }
+    return { uploadUrl: release.data.upload_url, releaseId: release.data.id }
   } catch (error) {
     // If error is not 404, it's an unknown error.
     if ((error as any).status !== 404) {
@@ -44,7 +44,7 @@ export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, 
       prerelease,
     } as CreateReleaseParams)
     console.log(`Did create release with tag "${tag}"`, { owner, repo, tag, sha, draft, prerelease, release: createReleaseResponse.data })
-    return { uploadUrl: createReleaseResponse.data.upload_url }
+    return { uploadUrl: createReleaseResponse.data.upload_url, releaseId: createReleaseResponse.data.id }
   } finally {
     core.endGroup()
   }
