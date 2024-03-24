@@ -36725,7 +36725,7 @@ const booleanInput = (name, options) => core.getBooleanInput(name, options);
 const runAssembleUpdaterCommand = async () => {
     try {
         console.log('Running Assemble Updater Command');
-        const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA } = (0, github_env_vars_1.getRequiredEnvVars)();
+        const { GITHUB_TOKEN, GITHUB_REPOSITORY } = (0, github_env_vars_1.getRequiredEnvVars)();
         if (!GITHUB_TOKEN) {
             core.setFailed('GITHUB_TOKEN is required');
             return;
