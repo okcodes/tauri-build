@@ -49,6 +49,10 @@ inputs:
     description: 'Publish date used to assemble the app updater. Only relevant if command is "assemble-updater".'
     required: true
     default: ''
+  updaterName:
+    description: 'Name for the updater json file. It must end with ".json". Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'updater.json'
 
 # Define your outputs here.
 outputs:
