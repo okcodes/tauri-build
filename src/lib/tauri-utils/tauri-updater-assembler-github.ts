@@ -31,11 +31,11 @@ export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: { se
   }
 
   for (const osArch in semiUpdater.platformsPlaceholder) {
-    const sigAndUpdaterMeta = semiUpdater.platformsPlaceholder[osArch as OS_Arch]!
-    const signatureContent = await getSignatureContent({ url: sigAndUpdaterMeta.signature.url, githubToken })
+    const { updater: updaterAsset, signature: signatureAsset } = semiUpdater.platformsPlaceholder[osArch as OS_Arch]!
+    const signatureContent = await getSignatureContent({ url: signatureAsset.url, githubToken })
     if (signatureContent) {
       updater.platforms[osArch as OS_Arch] = {
-        url: sigAndUpdaterMeta.updater.url,
+        url: updaterAsset.url,
         signature: signatureContent,
       }
     }
@@ -43,18 +43,15 @@ export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: { se
   return updater
 }
 
-const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string | undefined> => {
+const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string> => {
   const response = await axios({
     method: 'get',
     url,
-    responseType: 'stream',
+    responseType: 'text',
     headers: {
       Authorization: `token ${githubToken}`,
       Accept: 'application/octet-stream',
     },
   })
-
-  console.log(response.data)
-
-  return ''
+  return response.data
 }
