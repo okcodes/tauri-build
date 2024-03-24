@@ -161,29 +161,20 @@ describe('run', () => {
 
       setAllValidRequiredEnvVars()
       await main.run()
+      expect(runMock).toHaveBeenCalledTimes(1)
       expect(runMock).toHaveReturned()
 
-      // Verify that all the core library functions were called correctly
-      expect(setOutputMock).toHaveBeenCalledTimes(4)
-      expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as BuildAppActionOutputs, 'my-app-under-test')
-      expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as BuildAppActionOutputs, '7.7.7')
-      expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as BuildAppActionOutputs, tag)
-      expect(setOutputMock).toHaveBeenNthCalledWith(4, 'releaseId' as BuildAppActionOutputs, '1234567890')
+      // Create release called correctly
+      expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(1)
       expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, repo: THE_GITHUB_REPO, owner: THE_GITHUB_OWNER, tag, sha: THE_GITHUB_SHA, prerelease, draft })
+
+      // Build called correctly
+      expect(buildSpied).toHaveBeenCalledTimes(1)
       expect(buildSpied).toHaveBeenNthCalledWith(1, path.join(__dirname, 'test-files'), buildOptions)
+      expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
 
+      // Upload to GitHub called correctly
       const cwd = path.join(__dirname, 'test-files')
-
-      expect(executeCommandMock).toHaveBeenNthCalledWith(1, 'npm install', { cwd })
-      if (expectedTarget !== 'universal-apple-darwin') {
-        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add ${expectedTarget}`, { cwd })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(3, expectedBuildCommand, { cwd })
-      } else {
-        // On apple universal we install an additional rust target, so we make an extra command call
-        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add x86_64-apple-darwin`, { cwd })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd })
-        expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd })
-      }
       expect(uploadAppToGithubMock).toHaveBeenCalledTimes(1)
       expect(uploadAppToGithubMock).toHaveBeenNthCalledWith(1, {
         appName: 'my-app-under-test',
@@ -194,7 +185,28 @@ describe('run', () => {
         uploadUrl: 'https://example.com/upload-url',
         tauriContext: cwd,
       })
-      expect(await buildSpied.mock.results[0].value).toEqual({ target: expectedTarget })
+
+      // Utility commands called correctly
+      expect(executeCommandMock).toHaveBeenNthCalledWith(1, 'npm install', { cwd })
+      if (expectedTarget !== 'universal-apple-darwin') {
+        expect(executeCommandMock).toHaveBeenCalledTimes(3)
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add ${expectedTarget}`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, expectedBuildCommand, { cwd })
+      } else {
+        // On apple universal we install an additional rust target, so we make an extra command call
+        expect(executeCommandMock).toHaveBeenCalledTimes(4)
+        expect(executeCommandMock).toHaveBeenNthCalledWith(2, `rustup target add x86_64-apple-darwin`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(3, `rustup target add aarch64-apple-darwin`, { cwd })
+        expect(executeCommandMock).toHaveBeenNthCalledWith(4, expectedBuildCommand, { cwd })
+      }
+
+      // Verify that all the core library functions were called correctly
+      expect(setOutputMock).toHaveBeenCalledTimes(4)
+      expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as BuildAppActionOutputs, 'my-app-under-test')
+      expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as BuildAppActionOutputs, '7.7.7')
+      expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as BuildAppActionOutputs, tag)
+      expect(setOutputMock).toHaveBeenNthCalledWith(4, 'releaseId' as BuildAppActionOutputs, '1234567890')
+
       expect(setFailedMock).not.toHaveBeenCalled()
       expect(errorMock).not.toHaveBeenCalled()
     }
