@@ -39,17 +39,17 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const assetName = `${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const assetName = `${rustTarget}.${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
     return { assetName, isUpdater, isSignature }
   }
 
   const updaterOrSignatureExtension = updaterExt || signatureExt
   if (updaterOrSignatureExtension) {
-    const assetName = `${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
+    const assetName = `${rustTarget}.${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
     return { assetName, isUpdater, isSignature }
   }
 
-  const assetName = path.basename(filePath)
+  const assetName = `${rustTarget}.${path.basename(filePath)}`
   return { assetName, isUpdater, isSignature }
 }
 
