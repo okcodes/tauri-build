@@ -1,5 +1,3 @@
-import { findNameWithExtension } from './tauri-extensions'
-
 type OS = 'darwin' | 'linux' | 'windows'
 type Arch = 'aarch64' | 'armv7' | 'i686' | 'x86_64'
 type InvalidOs_Arch = 'darwin-armv7' | 'darwin-i686' // Excluding 2 os-archs not defined in tauri docs
@@ -34,33 +32,32 @@ export type TauriSemiUpdater = {
   version: string
   notes: string
   pub_date: string // "2020-06-22T19:25:57Z"
-  platformsPlaceholder: Partial<Record<OS_Arch, string>>
+  platformsPlaceholder: Partial<Record<OS_Arch, { updater: GithubAsset; signature: GithubAsset }>>
 }
 
 /**
  * Returns the rust target of an asset name if it starts with a rust target and a dot; undefined otherwise.
- * @param name
  */
-const getTauriTargetFromAsset = (name: string): TauriTarget | undefined => {
-  return ALL_TAURI_TARGETS.find(tauriTarget => name.startsWith(`${tauriTarget}.`))
+const getTauriTargetFromAsset = (asset: GithubAsset): TauriTarget | undefined => {
+  return ALL_TAURI_TARGETS.find(tauriTarget => asset.name.startsWith(`${tauriTarget}.`))
 }
 
-type TauriTargetToAssetNames = Partial<Record<TauriTarget, string[]>>
+type TauriTargetToAssetNames = Partial<Record<TauriTarget, GithubAsset[]>>
 
-const getTauriTargetToSignatureAssetsMap = (names: string[]): TauriTargetToAssetNames => {
-  return names.reduce((acc, name) => {
-    const tauriTarget = getTauriTargetFromAsset(name)
-    if (tauriTarget && name.endsWith('.sig')) {
-      acc[tauriTarget] = [...(acc[tauriTarget] || []), name]
+const getTauriTargetToSignatureAssetsMap = (assets: GithubAsset[]): TauriTargetToAssetNames => {
+  return assets.reduce((acc, asset) => {
+    const tauriTarget = getTauriTargetFromAsset(asset)
+    if (tauriTarget && asset.name.endsWith('.sig')) {
+      acc[tauriTarget] = [...(acc[tauriTarget] || []), asset]
     }
     return acc
   }, {} as TauriTargetToAssetNames)
 }
 
-const getOsArchsFromAssetNames = (names: string[]): Set<OS_Arch> => {
+const getOsArchsFromAssets = (assets: GithubAsset[]): Set<OS_Arch> => {
   const result = new Set<OS_Arch>()
-  for (const name of names) {
-    const tauriTarget = getTauriTargetFromAsset(name)
+  for (const asset of assets) {
+    const tauriTarget = getTauriTargetFromAsset(asset)
     if (!tauriTarget) {
       continue
     }
@@ -75,7 +72,7 @@ const getOsArchsFromAssetNames = (names: string[]): Set<OS_Arch> => {
   return result
 }
 
-const getSignatureForOsArch = ({ osArch, sigMap, preferUniversal, preferNsis }: { osArch: OS_Arch; sigMap: TauriTargetToAssetNames; preferUniversal: boolean; preferNsis: boolean }): string | undefined => {
+const getSignatureAssetForOsArch = ({ osArch, sigMap, preferUniversal, preferNsis }: { osArch: OS_Arch; sigMap: TauriTargetToAssetNames; preferUniversal: boolean; preferNsis: boolean }): GithubAsset | undefined => {
   if (osArch.startsWith('darwin')) {
     // On macOS, we might end up with an extra build, the universal. If universal signature is preferred use that one.
     const universalSignature = sigMap['universal-apple-darwin']?.[0]
@@ -86,15 +83,24 @@ const getSignatureForOsArch = ({ osArch, sigMap, preferUniversal, preferNsis }: 
   if (osArch.startsWith('windows')) {
     // If we have msi+nsis one, find if we have available the preferred one.
     const matchingSignatures = sigMap[OS_ARCH_TO_RUST_TARGET[osArch]] || []
-    const nsisSignature = findNameWithExtension(matchingSignatures, 'nsis.zip.sig')
-    const msiSignature = findNameWithExtension(matchingSignatures, 'msi.zip.sig')
+    const nsisSignature = matchingSignatures.find(_ => _.name.endsWith('.nsis.zip.sig'))
+    const msiSignature = matchingSignatures.find(_ => _.name.endsWith('.msi.zip.sig'))
     return preferNsis ? nsisSignature || msiSignature : msiSignature || nsisSignature
   }
 
   return sigMap[OS_ARCH_TO_RUST_TARGET[osArch]]?.[0]
 }
 
-export const assembleSemiUpdater = ({ appVersion, pubDate, assetNames, preferUniversal, preferNsis }: { appVersion: string; pubDate: string; assetNames: string[]; preferUniversal: boolean; preferNsis: boolean }): TauriSemiUpdater => {
+const getUpdaterAssetForSignatureAsset = ({ signatureAsset, assets }: { signatureAsset: GithubAsset | undefined; assets: GithubAsset[] }): GithubAsset | undefined => {
+  if (!signatureAsset || !signatureAsset.name.endsWith('.sig')) {
+    return void 0
+  }
+  // The name of the updater asset is always the same as the signature asset without the '.sig' ending.
+  const updaterAssetName = signatureAsset.name.slice(0, -'.sig'.length)
+  return assets.find(asset => asset.name === updaterAssetName)
+}
+
+export const assembleSemiUpdater = ({ appVersion, pubDate, assets, preferUniversal, preferNsis }: { appVersion: string; pubDate: string; assets: GithubAsset[]; preferUniversal: boolean; preferNsis: boolean }): TauriSemiUpdater => {
   const updater: TauriSemiUpdater = {
     version: appVersion,
     notes: `Version ${appVersion} brings enhancements and bug fixes for improved performance and stability.`,
@@ -102,12 +108,13 @@ export const assembleSemiUpdater = ({ appVersion, pubDate, assetNames, preferUni
     platformsPlaceholder: {},
   }
 
-  const osArchs = getOsArchsFromAssetNames(assetNames)
-  const sigMap = getTauriTargetToSignatureAssetsMap(assetNames)
+  const osArchs = getOsArchsFromAssets(assets)
+  const sigMap = getTauriTargetToSignatureAssetsMap(assets)
   for (const osArch of osArchs) {
-    const signatureAsset = getSignatureForOsArch({ sigMap, osArch, preferUniversal, preferNsis })
-    if (signatureAsset) {
-      updater.platformsPlaceholder[osArch] = signatureAsset
+    const signatureAsset = getSignatureAssetForOsArch({ sigMap, osArch, preferUniversal, preferNsis })
+    const updaterAsset = getUpdaterAssetForSignatureAsset({ assets, signatureAsset })
+    if (signatureAsset && updaterAsset) {
+      updater.platformsPlaceholder[osArch] = { updater: updaterAsset, signature: signatureAsset }
     }
   }
   return updater

@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { assembleSemiUpdater } from '../lib/tauri-utils/tauri-semi-updater-assembler'
 import { listGithubReleaseAssets } from '../lib/github-utils/list-github-release-assets'
 import { getRequiredEnvVars } from '../lib/github-utils/github-env-vars'
+import { assembleUpdaterFromSemi } from '../lib/tauri-utils/tauri-updater-assembler-github'
 
 export type AssembleUpdaterActionInputs = 'releaseId' | 'appVersion' | 'preferUniversal' | 'preferNsis' | 'pubDate'
 
@@ -43,9 +44,9 @@ export const runAssembleUpdaterCommand = async (): Promise<void> => {
     }
 
     const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
-    const assetNames = Object.keys(assets)
-    const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assetNames, preferUniversal, preferNsis })
-    console.log('Semi updater assembled, will assemble final updater', semiUpdater)
+    const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assets, preferUniversal, preferNsis })
+    const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN })
+    console.log('Semi updater assembled, will assemble final updater', { semiUpdater, updater })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Error assembling updater', error)
