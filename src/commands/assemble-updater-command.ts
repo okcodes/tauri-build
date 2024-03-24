@@ -42,8 +42,8 @@ export const runAssembleUpdaterCommand = async (): Promise<void> => {
       return
     }
 
-    // const assetNames: string[] = []
-    const assetNames: string[] = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
+    const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
+    const assetNames = Object.keys(assets)
     const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assetNames, preferUniversal, preferNsis })
     console.log('Semi updater assembled, will assemble final updater', semiUpdater)
   } catch (error) {
