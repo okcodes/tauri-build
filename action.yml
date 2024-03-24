@@ -29,6 +29,10 @@ inputs:
   draft:
     description: 'If the GitHub release to create should be marked as draft.'
     required: true
+  releaseId:
+    description: 'ID of the release to inspect to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
   appVersion:
     description: 'Version of the app used to assemble the app updater. Only relevant if command is "assemble-updater".'
     required: true
@@ -41,6 +45,10 @@ inputs:
     description: 'If the NSIS app updater will be preferred over the MSI one to assemble the app updater. Only relevant if command is "assemble-updater".'
     required: true
     default: 'false'
+  pubDate:
+    description: 'Publish date used to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
 
 # Define your outputs here.
 outputs:
