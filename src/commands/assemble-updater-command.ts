@@ -14,7 +14,7 @@ const booleanInput = (name: AssembleUpdaterActionInputs, options: core.InputOpti
 export const runAssembleUpdaterCommand = async (): Promise<void> => {
   try {
     console.log('Running Assemble Updater Command')
-    const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA } = getRequiredEnvVars()
+    const { GITHUB_TOKEN, GITHUB_REPOSITORY } = getRequiredEnvVars()
 
     if (!GITHUB_TOKEN) {
       core.setFailed('GITHUB_TOKEN is required')
