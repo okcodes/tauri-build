@@ -6,7 +6,6 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
     // TODO: Auto pagination. Put hard limit of 500 assets.
     const octokit = new Octokit({ auth: githubToken })
     const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 10 })
-    console.log('Listed release assets', { owner, repo, releaseId, response })
     return response.data.map(({ name, url }) => ({ url, name }))
   } catch (error) {
     console.error('Unexpected error listing release assets', { owner, repo, releaseId, error })
