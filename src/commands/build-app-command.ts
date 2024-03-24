@@ -75,6 +75,7 @@ export const runBuildAppCommand = async (): Promise<void> => {
     output('releaseId', String(releaseId))
   } catch (error) {
     // Fail the workflow run if an error occurs
+    console.error('Error building app', error)
     core.setFailed((error as Error).message)
   }
 }
