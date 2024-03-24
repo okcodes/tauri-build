@@ -41,9 +41,9 @@ describe('getAssetMeta', () => {
     const assetMeta = getAssetMeta({ filePath, appVersion, rustTarget, appName })
     expect(assetMeta).toEqual(expected)
     if (expected.isSignature) {
-      expect(expected.assetName.endsWith('.sig')).toEqual(true)
+      expect(assetMeta.assetName.endsWith('.sig')).toEqual(true)
     } else {
-      expect(expected.assetName.endsWith('.sig')).toEqual(false)
+      expect(assetMeta.assetName.endsWith('.sig')).toEqual(false)
     }
   })
 })
