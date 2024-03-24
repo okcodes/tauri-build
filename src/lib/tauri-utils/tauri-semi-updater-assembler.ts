@@ -51,7 +51,7 @@ const getTauriTargetToSignatureAssetsMap = (names: string[]): TauriTargetToAsset
   return names.reduce((acc, name) => {
     const tauriTarget = getTauriTargetFromAsset(name)
     if (tauriTarget && name.endsWith('.sig')) {
-      acc[tauriTarget] = [...new Set(acc[tauriTarget] || []).add(name)]
+      acc[tauriTarget] = [...(acc[tauriTarget] || []), name]
     }
     return acc
   }, {} as TauriTargetToAssetNames)
