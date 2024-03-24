@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { assembleSemiUpdater } from '../lib/tauri-utils/tauri-updater-assembler'
+import { assembleSemiUpdater } from '../lib/tauri-utils/tauri-semi-updater-assembler'
 import { listGithubReleaseAssets } from '../lib/github-utils/list-github-release-assets'
 import { getRequiredEnvVars } from '../lib/github-utils/github-env-vars'
 

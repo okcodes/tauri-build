@@ -1,4 +1,4 @@
-import { assembleSemiUpdater, TauriSemiUpdater } from './tauri-updater-assembler'
+import { assembleSemiUpdater, TauriSemiUpdater } from './tauri-semi-updater-assembler'
 
 const allAssets: string[] = [
   // macOS Silicon (darwin-aarch64)
