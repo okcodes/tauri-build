@@ -26,6 +26,9 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }: { octokit: Oc
       return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id }
     }
     hasNextPage = releases.headers?.link?.includes('rel="next"') || false
+    if (hasNextPage) {
+      page++
+    }
   }
 
   throw { status: 404 }
