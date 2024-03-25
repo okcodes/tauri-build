@@ -87,7 +87,7 @@ jobs:
       - name: Install pnpm
         run: npm i -g pnpm
 
-      - uses: okcodes/tauri-release-action@generate-tauri-updater
+      - uses: ./
         id: tauri
         with:
           command: 'build-app'
@@ -129,7 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: okcodes/tauri-release-action@generate-tauri-updater
+      - uses: ./
         id: tauri
         with:
           command: 'assemble-updater'
