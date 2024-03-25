@@ -16,14 +16,19 @@ type Params = {
 }
 
 const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }: { octokit: Octokit; tag: string; repo: string; owner: string }): Promise<{ uploadUrl: string; releaseId: number }> => {
-  // TODO: auto pagination so if there are more than 100 pages
-  const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100 })
-  const foundRelease = releases.data.find(_ => _.tag_name === tag)
-  console.log(foundRelease)
-  if (!foundRelease) {
-    throw { status: 404 }
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page })
+    const foundRelease = releases.data.find(_ => _.tag_name === tag)
+    if (foundRelease) {
+      return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id }
+    }
+    hasNextPage = releases.headers?.link?.includes('rel="next"') || false
   }
-  return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id }
+
+  throw { status: 404 }
 }
 
 export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<{ uploadUrl: string; releaseId: number }> => {
