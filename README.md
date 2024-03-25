@@ -1,4 +1,4 @@
-# Tauri Release
+# Tauri Build
 
 GitHub action that:
 

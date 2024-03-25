@@ -1,4 +1,4 @@
-name: 'Tauri Release'
+name: 'Tauri Build'
 description: 'Build a Tauri App and upload the bundled binaries and artifacts to a GitHub release.'
 author: 'okcodes'
 
