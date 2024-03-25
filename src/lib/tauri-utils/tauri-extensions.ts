@@ -23,6 +23,7 @@ export const knownExtensions: readonly ArtifactExtension[] = Object.freeze([
 export const COMPRESS_EXTENSION = '.tar.gz'
 export const UPDATER_EXTENSION = '.updater'
 
+// Artifacts using these extension don't contain the app version in the filename.
 const macVersionlessExtensions: readonly ArtifactExtension[] = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig'])
 const updaterExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip'])
 const signatureExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig'])
