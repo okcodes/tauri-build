@@ -91,7 +91,7 @@ jobs:
         id: tauri
         with:
           command: 'build-app'
-          tauriContext: ${{ github.workspace }}
+          tauriContext: ${{ github.workspace }}/micro-demo/
           tagTemplate: ${{ needs.test-long-tag.outputs.tag }}
           draft: true
           prerelease: true
