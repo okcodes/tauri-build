@@ -37006,14 +37006,20 @@ exports.getOrCreateGitHubRelease = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
-    // TODO: auto pagination so if there are more than 100 pages
-    const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100 });
-    const foundRelease = releases.data.find(_ => _.tag_name === tag);
-    console.log(foundRelease);
-    if (!foundRelease) {
-        throw { status: 404 };
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+        const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page });
+        const foundRelease = releases.data.find(_ => _.tag_name === tag);
+        if (foundRelease) {
+            return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id };
+        }
+        hasNextPage = releases.headers?.link?.includes('rel="next"') || false;
+        if (hasNextPage) {
+            page++;
+        }
     }
-    return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id };
+    throw { status: 404 };
 };
 const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
     const octokit = new rest_1.Octokit({ auth: githubToken });
@@ -37106,10 +37112,19 @@ const rest_1 = __nccwpck_require__(5375);
 const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }) => {
     try {
         // TODO: Enable substituting the URL in the updater so we can use our S3 URL. Don't make this action dependent on S3, so just a URL_TEMPLATE will do it.
-        // TODO: Auto pagination. Put hard limit of 500 assets.
         const octokit = new rest_1.Octokit({ auth: githubToken });
-        const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 100 });
-        return response.data.map(({ name, url }) => ({ url, name }));
+        let assets = [];
+        let page = 1;
+        let hasNextPage = true;
+        while (hasNextPage) {
+            const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 100, page });
+            assets = assets.concat(response.data.map(({ name, url }) => ({ url, name })));
+            hasNextPage = response.headers?.link?.includes('rel="next"') || false;
+            if (hasNextPage) {
+                page++;
+            }
+        }
+        return assets;
     }
     catch (error) {
         console.error('Unexpected error listing release assets', { owner, repo, releaseId, error });
