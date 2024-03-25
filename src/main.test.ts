@@ -8,14 +8,13 @@
 
 import * as core from '@actions/core'
 import * as main from './main'
-import { BuildAppActionInputs, BuildAppActionOutputs } from './commands/build-app-command'
 import path from 'path'
 import { test_deleteAllRequiredEnvVars, test_setEnvVar } from './lib/github-utils/github-env-vars'
 import * as githubRelease from './lib/github-utils/github-release'
 import * as tauriBuilder from './lib/tauri-utils/tauri-builder'
 import * as tauriGithubUploader from './lib/tauri-utils/tauri-github-uploader'
 import * as commandUtils from './lib/command-utils/command-utils'
-import { BUILD_APP_COMMAND, MainActionInputs } from './main'
+import { ActionInputs, ActionOutputs } from './main'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -133,7 +132,7 @@ describe('run', () => {
     async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts, expectedTarget, expectedBuildCommand }) => {
       // Set the action's inputs as return values from core.getInput()
       getInputMock.mockImplementation(name => {
-        switch (name as BuildAppActionInputs | MainActionInputs) {
+        switch (name as ActionInputs) {
           case 'tauriContext':
             return path.join(__dirname, 'test-files')
           case 'buildOptions':
@@ -142,14 +141,12 @@ describe('run', () => {
             return expectedArtifacts
           case 'tagTemplate':
             return tagTemplate
-          case 'command':
-            return BUILD_APP_COMMAND
           default:
             return ''
         }
       })
       getBooleanInputMock.mockImplementation(name => {
-        switch (name as BuildAppActionInputs) {
+        switch (name as ActionInputs) {
           case 'prerelease':
             return prerelease
           case 'draft':
@@ -202,10 +199,10 @@ describe('run', () => {
 
       // Verify that all the core library functions were called correctly
       expect(setOutputMock).toHaveBeenCalledTimes(4)
-      expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as BuildAppActionOutputs, 'my-app-under-test')
-      expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as BuildAppActionOutputs, '7.7.7')
-      expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as BuildAppActionOutputs, tag)
-      expect(setOutputMock).toHaveBeenNthCalledWith(4, 'releaseId' as BuildAppActionOutputs, '1234567890')
+      expect(setOutputMock).toHaveBeenNthCalledWith(1, 'appName' as ActionOutputs, 'my-app-under-test')
+      expect(setOutputMock).toHaveBeenNthCalledWith(2, 'appVersion' as ActionOutputs, '7.7.7')
+      expect(setOutputMock).toHaveBeenNthCalledWith(3, 'tag' as ActionOutputs, tag)
+      expect(setOutputMock).toHaveBeenNthCalledWith(4, 'releaseId' as ActionOutputs, '1234567890')
 
       expect(setFailedMock).not.toHaveBeenCalled()
       expect(errorMock).not.toHaveBeenCalled()
@@ -234,7 +231,7 @@ describe('run', () => {
   ])('$description', async ({ expectedArtifacts, expectedError, buildOptions }) => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
+      switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'test-files')
         case 'buildOptions':
@@ -243,14 +240,12 @@ describe('run', () => {
           return expectedArtifacts
         case 'tagTemplate':
           return 'hardcoded'
-        case 'command':
-          return BUILD_APP_COMMAND
         default:
           return ''
       }
     })
     getBooleanInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs) {
+      switch (name as ActionInputs) {
         case 'prerelease':
           return true
         case 'draft':
@@ -274,15 +269,13 @@ describe('run', () => {
   it('called with invalid "tauriContext" data must fail', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
+      switch (name as ActionInputs) {
         case 'tauriContext':
           return path.join(__dirname, 'non-existent-dir')
         case 'expectedArtifacts':
           return '1'
         case 'buildOptions':
           return '--target universal-apple-darwin'
-        case 'command':
-          return BUILD_APP_COMMAND
         default:
           return ''
       }
@@ -301,9 +294,7 @@ describe('run', () => {
 
   it('called with no GITHUB_TOKEN must fail', async () => {
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
-        case 'command':
-          return BUILD_APP_COMMAND
+      switch (name as ActionInputs) {
         default:
           return ''
       }
@@ -319,9 +310,7 @@ describe('run', () => {
 
   it('called with no GITHUB_REPOSITORY must fail', async () => {
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
-        case 'command':
-          return BUILD_APP_COMMAND
+      switch (name as ActionInputs) {
         default:
           return ''
       }
@@ -338,9 +327,7 @@ describe('run', () => {
 
   it('called with invalid GITHUB_REPOSITORY must fail', async () => {
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
-        case 'command':
-          return BUILD_APP_COMMAND
+      switch (name as ActionInputs) {
         default:
           return ''
       }
@@ -354,9 +341,7 @@ describe('run', () => {
 
   it('called with no GITHUB_SHA must fail', async () => {
     getInputMock.mockImplementation(name => {
-      switch (name as BuildAppActionInputs | MainActionInputs) {
-        case 'command':
-          return BUILD_APP_COMMAND
+      switch (name as ActionInputs) {
         default:
           return ''
       }
