@@ -10,7 +10,7 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
     while (hasNextPage) {
       const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 100, page })
       assets = assets.concat(response.data.map(({ name, url }) => ({ url, name })))
-      hasNextPage = !!response.headers.link && response.headers.link.includes('rel="next"')
+      hasNextPage = response.headers?.link?.includes('rel="next"') || false
       if (hasNextPage) {
         page++
       }
