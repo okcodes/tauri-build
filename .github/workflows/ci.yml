@@ -44,40 +44,106 @@ jobs:
         id: npm-ci-test
         run: npm run ci-test
 
-  test-action:
-    name: GitHub Actions Test
-    runs-on: macos-latest
-    permissions:
-      contents: 'write'
-
+  test-long-tag:
+    name: Get Pre-Release Long Tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
+      - id: get-tag
+        run: |
+          echo "tag={NAME}-v{VERSION}+$(date -u '+%Y.%m.%dT%H.%M.%SZ')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+  test-build:
+    needs: [test-long-tag]
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+        contents: 'write'
+    outputs:
+        appName: ${{ steps.tauri.outputs.appName }}
+        appVersion: ${{ steps.tauri.outputs.appVersion }}
+        tag: ${{ steps.tauri.outputs.tag }}
+        releaseId: ${{ steps.tauri.outputs.releaseId }}
+    strategy:
+        fail-fast: false
+        matrix:
+          include:
+            - name: Apple Intel
+              os: macos-latest
+              target: x86_64-apple-darwin
+              bundles: app,dmg,updater
+              expectedArtifacts: 4 # .app + .dmg + updater + signature
+            - name: Windows 64
+              os: windows-latest
+              target: x86_64-pc-windows-msvc
+              bundles: nsis,msi,updater
+              expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Install pnpm
         run: npm i -g pnpm
 
-      - id: get-tag
-        # The pre-release branch name will be like "app-name-v0.0.0+2024.12.31T10.33.59Z-6a7a8dd".
-        run: |
-          echo "tag={NAME}-v{VERSION}+$(date -u '+%Y.%m.%dT%H.%M.%SZ')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      - name: Test Local Action
-        id: test-action
-        uses: ./
+      - uses: okcodes/tauri-release-action@generate-tauri-updater
+        id: tauri
         with:
-          tauriContext: ./micro-demo/
-          tagTemplate: ${{ steps.get-tag.outputs.tag }}
+          command: 'build-app'
+          tauriContext: ${{ github.workspace }}
+          tagTemplate: ${{ needs.test-long-tag.outputs.tag }}
           draft: true
           prerelease: true
-          buildOptions: --target x86_64-apple-darwin --bundles app,dmg --verbose
-          expectedArtifacts: 2
+          buildOptions: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --verbose
+          expectedArtifacts: ${{ matrix.expectedArtifacts }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
-      - name: Print Output
-        id: output
-        run: |
-          echo "App Name: ${{ steps.test-action.outputs.appName }}"
-          echo "App Version: ${{ steps.test-action.outputs.appVersion }}"
-          echo "Tag: ${{ steps.test-action.outputs.tag }}"
+      - run: |
+          echo "App Name ${{ steps.tauri.outputs.appName }}"
+          echo "App Version ${{ steps.tauri.outputs.appVersion }}"
+          echo "Tag ${{ steps.tauri.outputs.tag }}"
+          echo "Release ID ${{ steps.tauri.outputs.releaseId }}"
+
+  test-updater:
+    needs: test-build
+    name: Assemble Updater
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+        contents: 'write'
+    outputs:
+        appName: ${{ needs.test-build.outputs.appName }}
+        appVersion: ${{ needs.test-build.outputs.appVersion }}
+        tag: ${{ needs.test-build.outputs.tag }}
+        releaseId: ${{ needs.test-build.outputs.releaseId }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: okcodes/tauri-release-action@generate-tauri-updater
+        id: tauri
+        with:
+          command: 'assemble-updater'
+          tauriContext: '' # Irrelevant
+          tagTemplate: '' # Irrelevant
+          draft: true # Irrelevant
+          prerelease: true # Irrelevant
+          buildOptions: '' # Irrelevant
+          expectedArtifacts: 0 # Irrelevant
+          appVersion: ${{needs.test-build.outputs.appVersion}}
+          preferNsis: true
+          preferUniversal: true
+          pubDate: '2024-03-24T00:11:22Z'
+          releaseId: ${{ needs.test-build.outputs.releaseId }}
+          updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
