@@ -7,15 +7,15 @@
  */
 
 import * as core from '@actions/core'
-import * as main from '../src/main'
-import { BuildAppActionInputs, BuildAppActionOutputs } from '../src/commands/build-app-command'
+import * as main from './main'
+import { BuildAppActionInputs, BuildAppActionOutputs } from './commands/build-app-command'
 import path from 'path'
-import { test_deleteAllRequiredEnvVars, test_setEnvVar } from '../src/lib/github-utils/github-env-vars'
-import * as githubRelease from '../src/lib/github-utils/github-release'
-import * as tauriBuilder from '../src/lib/tauri-utils/tauri-builder'
-import * as tauriGithubUploader from '../src/lib/tauri-utils/tauri-github-uploader'
-import * as commandUtils from '../src/lib/command-utils/command-utils'
-import { BUILD_APP_COMMAND, MainActionInputs } from '../src/main'
+import { test_deleteAllRequiredEnvVars, test_setEnvVar } from './lib/github-utils/github-env-vars'
+import * as githubRelease from './lib/github-utils/github-release'
+import * as tauriBuilder from './lib/tauri-utils/tauri-builder'
+import * as tauriGithubUploader from './lib/tauri-utils/tauri-github-uploader'
+import * as commandUtils from './lib/command-utils/command-utils'
+import { BUILD_APP_COMMAND, MainActionInputs } from './main'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
