@@ -15,15 +15,33 @@ type Params = {
   draft: boolean
 }
 
+const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }: { octokit: Octokit; tag: string; repo: string; owner: string }): Promise<{ uploadUrl: string; releaseId: number }> => {
+  // TODO: auto pagination so if there are more than 100 pages
+  const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100 })
+  const foundRelease = releases.data.find(_ => _.tag_name === tag)
+  console.log(foundRelease)
+  if (!foundRelease) {
+    throw { status: 404 }
+  }
+  return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id }
+}
+
 export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }: Params): Promise<{ uploadUrl: string; releaseId: number }> => {
   const octokit = new Octokit({ auth: githubToken })
   core.startGroup('GET OR CREATE RELEASE')
   try {
     // First try to get release by tag. If not found, create it.
     console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag })
-    const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
-    console.log(`Did get existing release with tag "${tag}".`, { owner, repo, tag, release: release.data })
-    return { uploadUrl: release.data.upload_url, releaseId: release.data.id }
+    if (draft) {
+      // Draft releases cannot be retrieved directly.
+      const release = await getDraftReleaseByTag({ tag, repo, octokit, owner })
+      console.log(`Did get existing draft release with tag "${tag}".`, { owner, repo, tag, release })
+      return release
+    } else {
+      const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
+      console.log(`Did get existing non-draft release with tag "${tag}".`, { owner, repo, tag, release: release.data })
+      return { uploadUrl: release.data.upload_url, releaseId: release.data.id }
+    }
   } catch (error) {
     // If error is not 404, it's an unknown error.
     if ((error as any).status !== 404) {
