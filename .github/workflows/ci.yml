@@ -61,26 +61,26 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     permissions:
-        contents: 'write'
+      contents: 'write'
     outputs:
-        appName: ${{ steps.tauri.outputs.appName }}
-        appVersion: ${{ steps.tauri.outputs.appVersion }}
-        tag: ${{ steps.tauri.outputs.tag }}
-        releaseId: ${{ steps.tauri.outputs.releaseId }}
+      appName: ${{ steps.tauri.outputs.appName }}
+      appVersion: ${{ steps.tauri.outputs.appVersion }}
+      tag: ${{ steps.tauri.outputs.tag }}
+      releaseId: ${{ steps.tauri.outputs.releaseId }}
     strategy:
-        fail-fast: false
-        matrix:
-          include:
-            - name: Apple Intel
-              os: macos-latest
-              target: x86_64-apple-darwin
-              bundles: app,dmg,updater
-              expectedArtifacts: 4 # .app + .dmg + updater + signature
-            - name: Windows 64
-              os: windows-latest
-              target: x86_64-pc-windows-msvc
-              bundles: nsis,msi,updater
-              expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
+      fail-fast: false
+      matrix:
+        include:
+          - name: Apple Intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg,updater
+            expectedArtifacts: 4 # .app + .dmg + updater + signature
+          - name: Windows 64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi,updater
+            expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
     steps:
       - uses: actions/checkout@v4
 
@@ -120,12 +120,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
-        contents: 'write'
+      contents: 'write'
     outputs:
-        appName: ${{ needs.test-build.outputs.appName }}
-        appVersion: ${{ needs.test-build.outputs.appVersion }}
-        tag: ${{ needs.test-build.outputs.tag }}
-        releaseId: ${{ needs.test-build.outputs.releaseId }}
+      appName: ${{ needs.test-build.outputs.appName }}
+      appVersion: ${{ needs.test-build.outputs.appVersion }}
+      tag: ${{ needs.test-build.outputs.tag }}
+      releaseId: ${{ needs.test-build.outputs.releaseId }}
     steps:
       - uses: actions/checkout@v4
 
