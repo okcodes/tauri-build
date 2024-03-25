@@ -4,29 +4,7 @@ import fs from 'fs'
 import * as core from '@actions/core'
 import { executeCommand } from '../command-utils/command-utils'
 import { Octokit } from '@octokit/rest'
-
-type ArtifactExtension = 'AppImage' | 'AppImage.tar.gz' | 'AppImage.tar.gz.sig' | 'app' | 'app.tar.gz' | 'app.tar.gz.sig' | 'dmg' | 'exe' | 'nsis.zip' | 'nsis.zip.sig' | 'msi' | 'msi.zip' | 'msi.zip.sig'
-
-const knownExtensions: ArtifactExtension[] = [
-  // Linux
-  'AppImage', // app
-  'AppImage.tar.gz', // updater
-  'AppImage.tar.gz.sig', // signature
-  // macOS
-  'app', // app
-  'app.tar.gz', // updater
-  'app.tar.gz.sig', // signature
-  'dmg', // app (mountable)
-  // Windows NSIS
-  'exe', // app
-  'nsis.zip', // updater
-  'nsis.zip.sig', // signature
-  // Windows MSI
-  'msi', // app
-  'msi.zip', // updater
-  'msi.zip.sig', // signature
-]
-const COMPRESS_EXT = '.tar.gz'
+import { COMPRESS_EXTENSION, getSignatureExtension, getUpdaterExtension, isMacVersionlessArtifact, knownExtensions, UPDATER_EXTENSION } from './tauri-extensions'
 
 type UploadAppToGithubArgs = {
   rustTarget: string
@@ -35,26 +13,7 @@ type UploadAppToGithubArgs = {
   expectedArtifacts: number
   appVersion: string
   githubToken: string
-  repo: string
-  owner: string
-  tag: string
-}
-
-const macVersionlessExt: readonly ArtifactExtension[] = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig'])
-
-const updaterExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip'])
-const signatureExtensions: readonly ArtifactExtension[] = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig'])
-
-const isMacVersionlessArtifact = (filename: string) => {
-  return macVersionlessExt.some(ext => filename.endsWith(ext))
-}
-
-const getUpdaterExtension = (filename: string): ArtifactExtension | undefined => {
-  return updaterExtensions.find(ext => filename.endsWith(ext))
-}
-
-const getSignatureExtension = (filename: string): ArtifactExtension | undefined => {
-  return signatureExtensions.find(ext => filename.endsWith(ext))
+  uploadUrl: string
 }
 
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
@@ -68,8 +27,6 @@ const rustTargetToMacBasenameSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
-const UPDATER_PREFIX = '.updater'
-
 export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const updaterExt = getUpdaterExtension(filePath)
   const isUpdater = !!updaterExt
@@ -77,26 +34,26 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
   const isSignature = !!signatureExt
 
   // Updaters and signatures use a prefix before the file basename.
-  const updaterSuffix = isUpdater || isSignature ? UPDATER_PREFIX : ''
+  const updaterSuffix = isUpdater || isSignature ? UPDATER_EXTENSION : ''
 
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const assetName = `${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const assetName = `${rustTarget}.${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
     return { assetName, isUpdater, isSignature }
   }
 
   const updaterOrSignatureExtension = updaterExt || signatureExt
   if (updaterOrSignatureExtension) {
-    const assetName = `${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
+    const assetName = `${rustTarget}.${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
     return { assetName, isUpdater, isSignature }
   }
 
-  const assetName = path.basename(filePath)
+  const assetName = `${rustTarget}.${path.basename(filePath)}`
   return { assetName, isUpdater, isSignature }
 }
 
-export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, owner, repo, tag }: UploadAppToGithubArgs): Promise<void> => {
+export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }: UploadAppToGithubArgs): Promise<void> => {
   try {
     core.startGroup('UPLOAD APP TO GITHUB')
 
@@ -133,7 +90,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
       // Prepare compressed path
       const artifactDir = path.dirname(artifact.path)
       const artifactBasename = path.basename(artifact.path)
-      const zArtifactPath = path.join(artifactDir, `__zipped__${artifactBasename}${COMPRESS_EXT}`)
+      const zArtifactPath = path.join(artifactDir, `__zipped__${artifactBasename}${COMPRESS_EXTENSION}`)
 
       // Fail if the compressed file already exist, preventing overriding existing data
       if (fs.existsSync(zArtifactPath)) {
@@ -148,18 +105,11 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
 
       // Replace artifact original name with the name after compressing it.
       artifacts[i]!.path = zArtifactPath // The artifact to upload now is the zipped one
-      artifacts[i]!.assetName += COMPRESS_EXT // Append zipped ext to asset name
+      artifacts[i]!.assetName += COMPRESS_EXTENSION // Append zipped ext to asset name
     }
 
     // Upload each artifact
-    console.log(`Found ${artifacts.length} artifacts, did compress the ones that are directories.".`, artifacts)
-    // Get release where to upload the artifacts
-    const octokit = new Octokit({ auth: githubToken })
-    console.log('Will get release by tag', { owner, repo, tag })
-    const release = await octokit.repos.getReleaseByTag({ owner, repo, tag })
-    console.log('Did get release by tag', { owner, repo, tag, release: release.data })
-    const uploadUrl = release.data.upload_url
-    console.log(`Will upload ${artifacts.length} artifacts`, artifacts)
+    console.log(`Found ${artifacts.length} artifacts, did compress the ones that are directories. Will upload.`, artifacts)
     for (const artifact of artifacts) {
       await uploadArtifact({ artifactPath: artifact.path, githubToken, uploadUrl, name: artifact.assetName })
     }

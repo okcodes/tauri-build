@@ -8,6 +8,9 @@ branding:
   color: 'yellow'
 
 inputs:
+  command:
+    description: 'Command to run. Can be either "build-app" or "assemble-updater".'
+    required: true
   tauriContext:
     description: 'Folder to the source code of the app. A file "src-tauri/Cargo.toml" must exist inside that folder.'
     required: true
@@ -26,6 +29,30 @@ inputs:
   draft:
     description: 'If the GitHub release to create should be marked as draft.'
     required: true
+  releaseId:
+    description: 'ID of the release to inspect to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
+  appVersion:
+    description: 'Version of the app used to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
+  preferUniversal:
+    description: 'If the macOS universal bundle of the app will be preferred over the platform-specific one to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'false'
+  preferNsis:
+    description: 'If the NSIS app updater will be preferred over the MSI one to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'false'
+  pubDate:
+    description: 'Publish date used to assemble the app updater. Only relevant if command is "assemble-updater".'
+    required: true
+    default: ''
+  updaterName:
+    description: 'Name for the updater json file. It must end with ".json". Only relevant if command is "assemble-updater".'
+    required: true
+    default: 'updater.json'
 
 # Define your outputs here.
 outputs:
@@ -35,6 +62,8 @@ outputs:
     description: 'Version of the app as defined in the "src-tauri/Cargo.toml" file.'
   tag:
     description: 'Tag used in the GitHub release.'
+  releaseId:
+    description: 'ID of the release obtained or created where the app assets were uploaded after building the app.'
 
 runs:
   using: node20
