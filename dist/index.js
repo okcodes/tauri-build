@@ -37005,15 +37005,33 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getOrCreateGitHubRelease = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
+const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
+    // TODO: auto pagination so if there are more than 100 pages
+    const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100 });
+    const foundRelease = releases.data.find(_ => _.tag_name === tag);
+    console.log(foundRelease);
+    if (!foundRelease) {
+        throw { status: 404 };
+    }
+    return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id };
+};
 const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
     const octokit = new rest_1.Octokit({ auth: githubToken });
     core.startGroup('GET OR CREATE RELEASE');
     try {
         // First try to get release by tag. If not found, create it.
         console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag });
-        const release = await octokit.repos.getReleaseByTag({ owner, repo, tag });
-        console.log(`Did get existing release with tag "${tag}".`, { owner, repo, tag, release: release.data });
-        return { uploadUrl: release.data.upload_url, releaseId: release.data.id };
+        if (draft) {
+            // Draft releases cannot be retrieved directly.
+            const release = await getDraftReleaseByTag({ tag, repo, octokit, owner });
+            console.log(`Did get existing draft release with tag "${tag}".`, { owner, repo, tag, release });
+            return release;
+        }
+        else {
+            const release = await octokit.repos.getReleaseByTag({ owner, repo, tag });
+            console.log(`Did get existing non-draft release with tag "${tag}".`, { owner, repo, tag, release: release.data });
+            return { uploadUrl: release.data.upload_url, releaseId: release.data.id };
+        }
     }
     catch (error) {
         // If error is not 404, it's an unknown error.
@@ -37090,7 +37108,7 @@ const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }) 
         // TODO: Enable substituting the URL in the updater so we can use our S3 URL. Don't make this action dependent on S3, so just a URL_TEMPLATE will do it.
         // TODO: Auto pagination. Put hard limit of 500 assets.
         const octokit = new rest_1.Octokit({ auth: githubToken });
-        const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 10 });
+        const response = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId, per_page: 100 });
         return response.data.map(({ name, url }) => ({ url, name }));
     }
     catch (error) {
@@ -37339,6 +37357,7 @@ exports.knownExtensions = Object.freeze([
 ]);
 exports.COMPRESS_EXTENSION = '.tar.gz';
 exports.UPDATER_EXTENSION = '.updater';
+// Artifacts using these extension don't contain the app version in the filename.
 const macVersionlessExtensions = Object.freeze(['app', 'app.tar.gz', 'app.tar.gz.sig']);
 const updaterExtensions = Object.freeze(['AppImage.tar.gz', 'app.tar.gz', 'nsis.zip', 'msi.zip']);
 const signatureExtensions = Object.freeze(['AppImage.tar.gz.sig', 'app.tar.gz.sig', 'nsis.zip.sig', 'msi.zip.sig']);
