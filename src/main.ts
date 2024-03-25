@@ -5,8 +5,8 @@ import { runBuildAppCommand } from './commands/build-app-command'
 
 export type MainActionInputs = 'command'
 type Command = 'build-app' | 'assemble-updater'
-export const BUILD_APP_COMMAND = 'build-app' as const
-export const ASSEMBLE_UPDATER_COMMAND = 'assemble-updater' as const
+export const BUILD_APP_COMMAND = 'build-app'
+export const ASSEMBLE_UPDATER_COMMAND = 'assemble-updater'
 
 const input = (name: MainActionInputs, options: core.InputOptions): string => core.getInput(name, options)
 const VALID_COMMANDS: Command[] = [BUILD_APP_COMMAND, ASSEMBLE_UPDATER_COMMAND]
