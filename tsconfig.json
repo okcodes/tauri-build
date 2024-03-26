@@ -16,5 +16,5 @@
     "skipLibCheck": true,
     "newLine": "lf"
   },
-  "exclude": ["./dist", "./node_modules", "./__tests__", "./coverage", "./micro-demo"]
+  "exclude": ["./dist", "./node_modules", "./__tests__", "./coverage"]
 }

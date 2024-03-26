@@ -82,15 +82,22 @@ jobs:
             bundles: nsis,msi,updater
             expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install pnpm
         run: npm i -g pnpm
+
+      # Checkout this repo
+      - uses: actions/checkout@v4
+
+      # Checkout demo app repo
+      - uses: actions/checkout@v4
+        with:
+          repository: 'okcodes/tauri-v1-micro-demo'
+          path: 'micro-demo'
+          ref: 'main'
 
       - uses: ./
         id: tauri
         with:
-          command: 'build-app'
           tauriContext: ${{ github.workspace }}/micro-demo/
           tagTemplate: ${{ needs.test-long-tag.outputs.tag }}
           draft: true
@@ -113,37 +120,3 @@ jobs:
           echo "App Version ${{ steps.tauri.outputs.appVersion }}"
           echo "Tag ${{ steps.tauri.outputs.tag }}"
           echo "Release ID ${{ steps.tauri.outputs.releaseId }}"
-
-  test-updater:
-    needs: test-build
-    name: Assemble Updater
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      contents: 'write'
-    outputs:
-      appName: ${{ needs.test-build.outputs.appName }}
-      appVersion: ${{ needs.test-build.outputs.appVersion }}
-      tag: ${{ needs.test-build.outputs.tag }}
-      releaseId: ${{ needs.test-build.outputs.releaseId }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./
-        id: tauri
-        with:
-          command: 'assemble-updater'
-          tauriContext: '' # Irrelevant
-          tagTemplate: '' # Irrelevant
-          draft: true # Irrelevant
-          prerelease: true # Irrelevant
-          buildOptions: '' # Irrelevant
-          expectedArtifacts: 0 # Irrelevant
-          appVersion: ${{needs.test-build.outputs.appVersion}}
-          preferNsis: true
-          preferUniversal: true
-          pubDate: '2024-03-24T00:11:22Z'
-          releaseId: ${{ needs.test-build.outputs.releaseId }}
-          updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
