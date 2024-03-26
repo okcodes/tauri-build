@@ -82,10 +82,18 @@ jobs:
             bundles: nsis,msi,updater
             expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install pnpm
         run: npm i -g pnpm
+
+      # Checkout this repo
+      - uses: actions/checkout@v4
+      
+      # Checkout demo app repo
+      - uses: actions/checkout@v4
+        with:
+          repository: 'okcodes/tauri-v1-micro-demo'
+          path: 'micro-demo'
+          ref: 'main'
 
       - uses: ./
         id: tauri
