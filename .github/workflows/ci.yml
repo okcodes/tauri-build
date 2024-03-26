@@ -87,7 +87,7 @@ jobs:
 
       # Checkout this repo
       - uses: actions/checkout@v4
-      
+
       # Checkout demo app repo
       - uses: actions/checkout@v4
         with:
