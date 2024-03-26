@@ -125,8 +125,6 @@ describe('run', () => {
       expectedTarget: 'aarch64-pc-windows-msvc',
       expectedBuildCommand: `npm tauri build -t aarch64-pc-windows-msvc`,
     },
-    // { buildOptions: '', tagTemplate: '{VERSION}', tag: '7.7.7', prerelease: true, draft: true, expectedArtifacts: '33' },
-    // { buildOptions: '', tagTemplate: '{sHoRt_sHa}', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
   ])(
     'With: buildOptions $buildOptions, tagTemplate $tagTemplate, tag $tag, prerelease $prerelease, draft $draft, expectedArtifacts $expectedArtifacts, expectedTarget $expectedTarget',
     async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts, expectedTarget, expectedBuildCommand }) => {
@@ -208,6 +206,61 @@ describe('run', () => {
       expect(errorMock).not.toHaveBeenCalled()
     }
   )
+
+  test.each([
+    { buildOptions: '', tagTemplate: 'test', tag: '7.7.7', prerelease: true, draft: true, expectedArtifacts: '33' },
+    { buildOptions: '--bundles app,dmg,updater', tagTemplate: 'test', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
+    { buildOptions: '', tagTemplate: 'test', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
+  ])('With invalid build options it should fail', async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts }) => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'tauriContext':
+          return path.join(__dirname, 'test-files')
+        case 'buildOptions':
+          return buildOptions
+        case 'expectedArtifacts':
+          return expectedArtifacts
+        case 'tagTemplate':
+          return tagTemplate
+        default:
+          return ''
+      }
+    })
+    getBooleanInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'prerelease':
+          return prerelease
+        case 'draft':
+          return draft
+        default:
+          return false
+      }
+    })
+
+    setAllValidRequiredEnvVars()
+    await main.run()
+    expect(runMock).toHaveBeenCalledTimes(1)
+    expect(runMock).toHaveReturned()
+
+    // Create release called correctly
+    expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(0)
+
+    // Build called correctly
+    expect(buildSpied).toHaveBeenCalledTimes(0)
+
+    expect(uploadAppToGithubMock).toHaveBeenCalledTimes(0)
+
+    // Utility commands called correctly
+    expect(executeCommandMock).toHaveBeenCalledTimes(0)
+
+    // Verify that all the core library functions were called correctly
+    expect(setOutputMock).toHaveBeenCalledTimes(0)
+
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'The buildOptions must contain a flag --target (or -t) specifying the rust target triple to build')
+    expect(errorMock).not.toHaveBeenCalled()
+  })
 
   test.each([
     {
