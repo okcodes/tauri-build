@@ -211,7 +211,7 @@ describe('run', () => {
     { buildOptions: '', tagTemplate: 'test', tag: '7.7.7', prerelease: true, draft: true, expectedArtifacts: '33' },
     { buildOptions: '--bundles app,dmg,updater', tagTemplate: 'test', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
     { buildOptions: '', tagTemplate: 'test', tag: THE_GITHUB_SHORT_SHA, prerelease: false, draft: false, expectedArtifacts: '33' },
-  ])('With invalid build options it should fail', async ({ buildOptions, tagTemplate, tag, prerelease, draft, expectedArtifacts }) => {
+  ])('With invalid build options it should fail', async ({ buildOptions, tagTemplate, prerelease, draft, expectedArtifacts }) => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
