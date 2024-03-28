@@ -11,11 +11,12 @@ inputs:
     description: 'Folder to the source code of the app. A file "src-tauri/Cargo.toml" must exist inside that folder.'
     required: true
   buildOptions:
-    description: Options sent to the tauri build command. You must specify the "--target" flag. E.g., "--target aarch64-apple-darwin --bundles 'app,dmg,updater'". Run "pnpm run build --help" for more info.
-    required: true
+    description:
+      (required if "skipBuild" is "false") Options sent to the tauri build command. You must specify the "--target" flag. E.g., "--target aarch64-apple-darwin --bundles 'app,dmg,updater'". Run "pnpm run build --help" for more info.
+    required: false
   expectedArtifacts:
-    description: The expected number of app files to find after the build. The action fails if this number is not met.
-    required: true
+    description: (required if "skipBuild" is "false") The expected number of app files to find after the build. The action fails if this number is not met.
+    required: false
   tagTemplate:
     description: 'Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in "src-tauri/Cargo.toml".'
     required: true
@@ -25,6 +26,10 @@ inputs:
   draft:
     description: 'If the GitHub release to create should be marked as draft.'
     required: true
+  skipBuild:
+    description: 'If set to "true", the app will not be built, and only the GitHub release will be created. This is useful if you build the app using a matrix, where there is the possibility of creating the same release multiple times.'
+    required: true
+    default: 'false'
 
 outputs:
   appName:
