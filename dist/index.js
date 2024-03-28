@@ -33891,6 +33891,7 @@ async function run() {
         const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true });
         const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true });
         const draft = booleanInput('draft', { required: true, trimWhitespace: true });
+        const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true });
         // Validate amount of artifacts
         if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
             core.setFailed('The input "expectedArtifacts" must be a number greater or equal to 1.');
@@ -33904,15 +33905,20 @@ async function run() {
         // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
         console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY });
         const appInfo = await (0, get_rust_app_info_1.parseTauriCargoTomlFileInContext)(tauriContext);
-        const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA });
-        const { uploadUrl, releaseId } = await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
-        const { target: rustTarget } = await (0, tauri_builder_1.build)(tauriContext, buildOptions);
         const { name: appName, version: appVersion } = appInfo.package;
-        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts });
+        const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA });
+        // Create release if it does not exist
+        const { uploadUrl, releaseId } = await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
+        // Set app meta outputs
         output('appName', appName);
         output('appVersion', appVersion);
         output('tag', tag);
         output('releaseId', String(releaseId));
+        if (skipBuild) {
+            return;
+        }
+        const { target: rustTarget } = await (0, tauri_builder_1.build)(tauriContext, buildOptions);
+        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts });
     }
     catch (error) {
         // Fail the workflow run if an error occurs
