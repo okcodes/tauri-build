@@ -33684,7 +33684,7 @@ const rustTargetToMacSuffixMap = {
 const rustTargetToMacBasenameSuffix = (target) => {
     return rustTargetToMacSuffixMap[target] || target;
 };
-const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }) => {
+const getAssetMeta = ({ appName, filePath, appVersion, rustTarget, tag }) => {
     const updaterExt = (0, tauri_extensions_1.getUpdaterExtension)(filePath);
     const isUpdater = !!updaterExt;
     const signatureExt = (0, tauri_extensions_1.getSignatureExtension)(filePath);
@@ -33694,19 +33694,23 @@ const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }) => {
     if ((0, tauri_extensions_1.isMacVersionlessArtifact)(filePath)) {
         const match = path_1.default.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`));
         const extension = match?.groups?.extension || '';
-        const assetName = `${rustTarget}.${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`;
+        const assetName = `${rustTarget}.${appName}_${tag}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`;
         return { assetName, isUpdater, isSignature };
     }
     const updaterOrSignatureExtension = updaterExt || signatureExt;
     if (updaterOrSignatureExtension) {
-        const assetName = `${rustTarget}.${path_1.default.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`;
+        const basename = path_1.default.basename(filePath, `.${updaterOrSignatureExtension}`);
+        const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`);
+        const assetName = `${rustTarget}.${basenameWithTag}${updaterSuffix}.${updaterOrSignatureExtension}`;
         return { assetName, isUpdater, isSignature };
     }
-    const assetName = `${rustTarget}.${path_1.default.basename(filePath)}`;
+    const basename = path_1.default.basename(filePath);
+    const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`);
+    const assetName = `${rustTarget}.${basenameWithTag}`;
     return { assetName, isUpdater, isSignature };
 };
 exports.getAssetMeta = getAssetMeta;
-const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }) => {
+const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl, tag }) => {
     try {
         core.startGroup('UPLOAD APP TO GITHUB');
         const artifactsPattern = `src-tauri/target/${rustTarget}/release/bundle/**/${appName}*.{${tauri_extensions_1.knownExtensions.join(',')}}`;
@@ -33715,7 +33719,7 @@ const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedAr
         const artifacts = artifactRelativePaths.map(relativePath => ({
             path: path_1.default.join(tauriContext, relativePath),
             isDir: fs_1.default.statSync(path_1.default.join(tauriContext, relativePath)).isDirectory(),
-            assetName: (0, exports.getAssetMeta)({ filePath: relativePath, appName, rustTarget, appVersion }).assetName,
+            assetName: (0, exports.getAssetMeta)({ filePath: relativePath, appName, rustTarget, appVersion, tag }).assetName,
         }));
         // Validate amount of artifacts
         if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
@@ -33919,7 +33923,7 @@ async function run() {
             return;
         }
         const { target: rustTarget } = await (0, tauri_builder_1.build)(tauriContext, buildOptions);
-        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr });
+        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr, tag });
     }
     catch (error) {
         // Fail the workflow run if an error occurs

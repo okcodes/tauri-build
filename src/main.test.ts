@@ -179,6 +179,7 @@ describe('run', () => {
         rustTarget: expectedTarget,
         uploadUrl: 'https://example.com/upload-url',
         tauriContext: cwd,
+        tag,
       })
 
       // Utility commands called correctly

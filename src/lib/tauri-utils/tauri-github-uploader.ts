@@ -6,16 +6,6 @@ import { executeCommand } from '../command-utils/command-utils'
 import { Octokit } from '@octokit/rest'
 import { COMPRESS_EXTENSION, getSignatureExtension, getUpdaterExtension, isMacVersionlessArtifact, knownExtensions, UPDATER_EXTENSION } from './tauri-extensions'
 
-type UploadAppToGithubArgs = {
-  rustTarget: string
-  appName: string
-  tauriContext: string
-  expectedArtifacts: number
-  appVersion: string
-  githubToken: string
-  uploadUrl: string
-}
-
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
 const rustTargetToMacSuffixMap: Record<string, string> = {
   'aarch64-apple-darwin': 'aarch64',
@@ -27,7 +17,15 @@ const rustTargetToMacBasenameSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
-export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
+export type GetAssetMetaParams = {
+  appName: string
+  filePath: string
+  appVersion: string
+  rustTarget: string
+  tag: string
+}
+
+export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget, tag }: GetAssetMetaParams): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const updaterExt = getUpdaterExtension(filePath)
   const isUpdater = !!updaterExt
   const signatureExt = getSignatureExtension(filePath)
@@ -39,21 +37,36 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { ap
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const assetName = `${rustTarget}.${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const assetName = `${rustTarget}.${appName}_${tag}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
     return { assetName, isUpdater, isSignature }
   }
 
   const updaterOrSignatureExtension = updaterExt || signatureExt
   if (updaterOrSignatureExtension) {
-    const assetName = `${rustTarget}.${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
+    const basename = path.basename(filePath, `.${updaterOrSignatureExtension}`)
+    const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`)
+    const assetName = `${rustTarget}.${basenameWithTag}${updaterSuffix}.${updaterOrSignatureExtension}`
     return { assetName, isUpdater, isSignature }
   }
 
-  const assetName = `${rustTarget}.${path.basename(filePath)}`
+  const basename = path.basename(filePath)
+  const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`)
+  const assetName = `${rustTarget}.${basenameWithTag}`
   return { assetName, isUpdater, isSignature }
 }
 
-export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }: UploadAppToGithubArgs): Promise<void> => {
+type UploadAppToGithubArgs = {
+  rustTarget: string
+  appName: string
+  tauriContext: string
+  expectedArtifacts: number
+  appVersion: string
+  githubToken: string
+  uploadUrl: string
+  tag: string
+}
+
+export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl, tag }: UploadAppToGithubArgs): Promise<void> => {
   try {
     core.startGroup('UPLOAD APP TO GITHUB')
 
@@ -64,7 +77,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
     const artifacts = artifactRelativePaths.map(relativePath => ({
       path: path.join(tauriContext, relativePath),
       isDir: fs.statSync(path.join(tauriContext, relativePath)).isDirectory(),
-      assetName: getAssetMeta({ filePath: relativePath, appName, rustTarget, appVersion }).assetName,
+      assetName: getAssetMeta({ filePath: relativePath, appName, rustTarget, appVersion, tag }).assetName,
     }))
 
     // Validate amount of artifacts
