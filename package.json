@@ -1,16 +1,16 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "tauri-build",
+  "description": "Automates the process of building and releasing Rust-based Tauri applications, including the uploading of artifacts to a GitHub release.",
   "version": "0.0.0",
   "author": "",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/okcodes/tauri-build",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/okcodes/tauri-build.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/okcodes/tauri-build/issues"
   },
   "keywords": [
     "actions",
