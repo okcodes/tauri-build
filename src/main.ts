@@ -7,7 +7,7 @@ import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { uploadAppToGithub } from './lib/tauri-utils/tauri-github-uploader'
 import { VERSION } from './version'
 
-export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft'
+export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft' | 'skipBuild'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag' | 'releaseId'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
@@ -53,6 +53,7 @@ export async function run(): Promise<void> {
     const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
     const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
     const draft = booleanInput('draft', { required: true, trimWhitespace: true })
+    const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true })
 
     // Validate amount of artifacts
     if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
@@ -69,17 +70,24 @@ export async function run(): Promise<void> {
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY })
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
+    const { name: appName, version: appVersion } = appInfo.package
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
+    // Create release if it does not exist
     const { uploadUrl, releaseId } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
-    const { target: rustTarget } = await build(tauriContext, buildOptions)
-    const { name: appName, version: appVersion } = appInfo.package
-    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
 
+    // Set app meta outputs
     output('appName', appName)
     output('appVersion', appVersion)
     output('tag', tag)
     output('releaseId', String(releaseId))
+
+    if (skipBuild) {
+      return
+    }
+
+    const { target: rustTarget } = await build(tauriContext, buildOptions)
+    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Error building app', error)
