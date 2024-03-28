@@ -22,9 +22,10 @@ export type GetAssetMetaParams = {
   filePath: string
   appVersion: string
   rustTarget: string
+  tag: string
 }
 
-export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: GetAssetMetaParams): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
+export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget, tag }: GetAssetMetaParams): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const updaterExt = getUpdaterExtension(filePath)
   const isUpdater = !!updaterExt
   const signatureExt = getSignatureExtension(filePath)
@@ -58,9 +59,10 @@ type UploadAppToGithubArgs = {
   appVersion: string
   githubToken: string
   uploadUrl: string
+  tag: string
 }
 
-export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }: UploadAppToGithubArgs): Promise<void> => {
+export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl, tag }: UploadAppToGithubArgs): Promise<void> => {
   try {
     core.startGroup('UPLOAD APP TO GITHUB')
 
@@ -71,7 +73,7 @@ export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, exp
     const artifacts = artifactRelativePaths.map(relativePath => ({
       path: path.join(tauriContext, relativePath),
       isDir: fs.statSync(path.join(tauriContext, relativePath)).isDirectory(),
-      assetName: getAssetMeta({ filePath: relativePath, appName, rustTarget, appVersion }).assetName,
+      assetName: getAssetMeta({ filePath: relativePath, appName, rustTarget, appVersion, tag }).assetName,
     }))
 
     // Validate amount of artifacts

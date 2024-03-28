@@ -88,7 +88,7 @@ export async function run(): Promise<void> {
     }
 
     const { target: rustTarget } = await build(tauriContext, buildOptions)
-    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr })
+    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr, tag })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Error building app', error)
