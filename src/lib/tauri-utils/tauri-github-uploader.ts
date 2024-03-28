@@ -27,7 +27,14 @@ const rustTargetToMacBasenameSuffix = (target: string) => {
   return rustTargetToMacSuffixMap[target] || target
 }
 
-export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: { appName: string; filePath: string; appVersion: string; rustTarget: string }): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
+export type GetAssetMetaParams = {
+  appName: string
+  filePath: string
+  appVersion: string
+  rustTarget: string
+}
+
+export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: GetAssetMetaParams): { assetName: string; isUpdater: boolean; isSignature: boolean } => {
   const updaterExt = getUpdaterExtension(filePath)
   const isUpdater = !!updaterExt
   const signatureExt = getSignatureExtension(filePath)
