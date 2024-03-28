@@ -33887,18 +33887,19 @@ async function run() {
         }
         const tauriContext = input('tauriContext', { required: true, trimWhitespace: true });
         const buildOptions = input('buildOptions', { required: false, trimWhitespace: true });
-        const expectedArtifacts = +input('expectedArtifacts', { required: true, trimWhitespace: true });
+        const expectedArtifactsStr = input('expectedArtifacts', { required: false, trimWhitespace: true });
         const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true });
         const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true });
         const draft = booleanInput('draft', { required: true, trimWhitespace: true });
         const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true });
         // Validate amount of artifacts
-        if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
+        const invalidExpectedArtifacts = isNaN(+expectedArtifactsStr) || +expectedArtifactsStr <= 0;
+        if (!skipBuild && invalidExpectedArtifacts) {
             core.setFailed('The input "expectedArtifacts" must be a number greater or equal to 1.');
             return;
         }
         // Validate build options
-        if (!(0, tauri_builder_1.targetFromBuildOptions)(buildOptions)) {
+        if (!skipBuild && !(0, tauri_builder_1.targetFromBuildOptions)(buildOptions)) {
             core.setFailed('The buildOptions must contain a flag --target (or -t) specifying the rust target triple to build');
             return;
         }
@@ -33918,7 +33919,7 @@ async function run() {
             return;
         }
         const { target: rustTarget } = await (0, tauri_builder_1.build)(tauriContext, buildOptions);
-        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts });
+        await (0, tauri_github_uploader_1.uploadAppToGithub)({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr });
     }
     catch (error) {
         // Fail the workflow run if an error occurs
