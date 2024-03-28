@@ -37,17 +37,21 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget, tag }:
   if (isMacVersionlessArtifact(filePath)) {
     const match = path.basename(filePath).match(new RegExp(`^${appName}(?<extension>.*)`))
     const extension = match?.groups?.extension || ''
-    const assetName = `${rustTarget}.${appName}_${appVersion}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
+    const assetName = `${rustTarget}.${appName}_${tag}_${rustTargetToMacBasenameSuffix(rustTarget)}${updaterSuffix}${extension}`
     return { assetName, isUpdater, isSignature }
   }
 
   const updaterOrSignatureExtension = updaterExt || signatureExt
   if (updaterOrSignatureExtension) {
-    const assetName = `${rustTarget}.${path.basename(filePath, `.${updaterOrSignatureExtension}`)}${updaterSuffix}.${updaterOrSignatureExtension}`
+    const basename = path.basename(filePath, `.${updaterOrSignatureExtension}`)
+    const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`)
+    const assetName = `${rustTarget}.${basenameWithTag}${updaterSuffix}.${updaterOrSignatureExtension}`
     return { assetName, isUpdater, isSignature }
   }
 
-  const assetName = `${rustTarget}.${path.basename(filePath)}`
+  const basename = path.basename(filePath)
+  const basenameWithTag = basename.replace(new RegExp('^' + appName + '_' + appVersion), `${appName}_${tag}`)
+  const assetName = `${rustTarget}.${basenameWithTag}`
   return { assetName, isUpdater, isSignature }
 }
 
