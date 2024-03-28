@@ -7,7 +7,7 @@ import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { uploadAppToGithub } from './lib/tauri-utils/tauri-github-uploader'
 import { VERSION } from './version'
 
-export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft'
+export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft' | 'skipBuild'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag' | 'releaseId'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
@@ -49,19 +49,21 @@ export async function run(): Promise<void> {
 
     const tauriContext = input('tauriContext', { required: true, trimWhitespace: true })
     const buildOptions = input('buildOptions', { required: false, trimWhitespace: true })
-    const expectedArtifacts = +input('expectedArtifacts', { required: true, trimWhitespace: true })
+    const expectedArtifactsStr = input('expectedArtifacts', { required: false, trimWhitespace: true })
     const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
     const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
     const draft = booleanInput('draft', { required: true, trimWhitespace: true })
+    const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true })
 
     // Validate amount of artifacts
-    if (isNaN(expectedArtifacts) || expectedArtifacts <= 0) {
+    const invalidExpectedArtifacts = isNaN(+expectedArtifactsStr) || +expectedArtifactsStr <= 0
+    if (!skipBuild && invalidExpectedArtifacts) {
       core.setFailed('The input "expectedArtifacts" must be a number greater or equal to 1.')
       return
     }
 
     // Validate build options
-    if (!targetFromBuildOptions(buildOptions)) {
+    if (!skipBuild && !targetFromBuildOptions(buildOptions)) {
       core.setFailed('The buildOptions must contain a flag --target (or -t) specifying the rust target triple to build')
       return
     }
@@ -69,17 +71,24 @@ export async function run(): Promise<void> {
     // Debug logs (core.debug("msg")) are only output if the `ACTIONS_STEP_DEBUG` secret is true
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY })
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
+    const { name: appName, version: appVersion } = appInfo.package
     const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
+    // Create release if it does not exist
     const { uploadUrl, releaseId } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
-    const { target: rustTarget } = await build(tauriContext, buildOptions)
-    const { name: appName, version: appVersion } = appInfo.package
-    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts })
 
+    // Set app meta outputs
     output('appName', appName)
     output('appVersion', appVersion)
     output('tag', tag)
     output('releaseId', String(releaseId))
+
+    if (skipBuild) {
+      return
+    }
+
+    const { target: rustTarget } = await build(tauriContext, buildOptions)
+    await uploadAppToGithub({ uploadUrl, appVersion, githubToken: GITHUB_TOKEN, appName, tauriContext, rustTarget, expectedArtifacts: +expectedArtifactsStr })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Error building app', error)
