@@ -6,16 +6,6 @@ import { executeCommand } from '../command-utils/command-utils'
 import { Octokit } from '@octokit/rest'
 import { COMPRESS_EXTENSION, getSignatureExtension, getUpdaterExtension, isMacVersionlessArtifact, knownExtensions, UPDATER_EXTENSION } from './tauri-extensions'
 
-type UploadAppToGithubArgs = {
-  rustTarget: string
-  appName: string
-  tauriContext: string
-  expectedArtifacts: number
-  appVersion: string
-  githubToken: string
-  uploadUrl: string
-}
-
 // Only mapping for apple targets are needed, because apple is the only platform that produces a file with no version attached to it (the .app).
 const rustTargetToMacSuffixMap: Record<string, string> = {
   'aarch64-apple-darwin': 'aarch64',
@@ -58,6 +48,16 @@ export const getAssetMeta = ({ appName, filePath, appVersion, rustTarget }: GetA
 
   const assetName = `${rustTarget}.${path.basename(filePath)}`
   return { assetName, isUpdater, isSignature }
+}
+
+type UploadAppToGithubArgs = {
+  rustTarget: string
+  appName: string
+  tauriContext: string
+  expectedArtifacts: number
+  appVersion: string
+  githubToken: string
+  uploadUrl: string
 }
 
 export const uploadAppToGithub = async ({ rustTarget, appName, tauriContext, expectedArtifacts, appVersion, githubToken, uploadUrl }: UploadAppToGithubArgs): Promise<void> => {
