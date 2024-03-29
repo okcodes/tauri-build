@@ -21,9 +21,9 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }: { octokit: Oc
 
   while (hasNextPage) {
     const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page })
-    const foundRelease = releases.data.find(_ => _.tag_name === tag)
-    if (foundRelease) {
-      return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id }
+    const matchingReleases = releases.data.filter(_ => _.tag_name === tag)
+    if (matchingReleases[0]) {
+      return { uploadUrl: matchingReleases[0].upload_url, releaseId: matchingReleases[0].id }
     }
     hasNextPage = releases.headers?.link?.includes('rel="next"') || false
     if (hasNextPage) {
@@ -39,7 +39,7 @@ export const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, 
   core.startGroup('GET OR CREATE RELEASE')
   try {
     // First try to get release by tag. If not found, create it.
-    console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag })
+    console.log(`Will get release with tag "${tag}"`, { owner, repo, tag, draft })
     if (draft) {
       // Draft releases cannot be retrieved directly.
       const release = await getDraftReleaseByTag({ tag, repo, octokit, owner })
