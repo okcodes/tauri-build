@@ -33464,7 +33464,7 @@ const parseCargoTomlFile = async (cargoTomlPath) => {
         console.log('Will parse toml file', cargoTomlPath);
         const toml = (await fs_1.promises.readFile(cargoTomlPath)).toString('utf-8');
         const appInfo = (0, toml_1.parse)(toml);
-        return {
+        const rustAppInfo = {
             package: {
                 name: appInfo?.package?.name || '',
                 version: appInfo?.package?.version || '',
@@ -33472,6 +33472,8 @@ const parseCargoTomlFile = async (cargoTomlPath) => {
                 edition: appInfo?.package?.edition || '',
             },
         };
+        console.log('Toml parsed', rustAppInfo);
+        return rustAppInfo;
     }
     catch (error) {
         throw new Error(`Cannot read or parse toml file: ${error.message}`, { cause: error });
