@@ -27,7 +27,7 @@ let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 let executeCommandMock: jest.SpiedFunction<typeof commandUtils.executeCommand>
-let getOrCreateGitHubReleaseMock: jest.SpiedFunction<typeof githubRelease.getOrCreateGitHubRelease>
+let getReleaseByTagOrCreateMock: jest.SpiedFunction<typeof githubRelease.getReleaseByTagOrCreate>
 let uploadAppToGithubMock: jest.SpiedFunction<typeof tauriGithubUploader.uploadAppToGithub>
 
 // Keep original implementation and spy
@@ -60,7 +60,7 @@ describe('run', () => {
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     executeCommandMock = jest.spyOn(commandUtils, 'executeCommand').mockImplementation()
-    getOrCreateGitHubReleaseMock = jest.spyOn(githubRelease, 'getOrCreateGitHubRelease').mockResolvedValue({ uploadUrl: 'https://example.com/upload-url', releaseId: 1234567890 })
+    getReleaseByTagOrCreateMock = jest.spyOn(githubRelease, 'getReleaseByTagOrCreate').mockImplementation(async ({ tag }) => ({ uploadUrl: 'https://example.com/upload-url', id: 1234567890, tag }))
     uploadAppToGithubMock = jest.spyOn(tauriGithubUploader, 'uploadAppToGithub').mockImplementation()
   })
 
@@ -82,6 +82,7 @@ describe('run', () => {
         tagTemplate: '{NAME}-v{VERSION}+{SHORT_SHA}',
         expectedArtifacts: '30',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: true,
@@ -101,6 +102,7 @@ describe('run', () => {
         tagTemplate: 'hardcoded-text-{VERSION}',
         expectedArtifacts: '31',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: false,
@@ -120,6 +122,7 @@ describe('run', () => {
         tagTemplate: '{name}-{version}+{short_sha}',
         expectedArtifacts: '32',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: true,
@@ -139,6 +142,7 @@ describe('run', () => {
         tagTemplate: 'my-test-app',
         expectedArtifacts: '33',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: false,
@@ -158,6 +162,7 @@ describe('run', () => {
         tagTemplate: '{VERSION}',
         expectedArtifacts: '33',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: true,
@@ -177,6 +182,7 @@ describe('run', () => {
         tagTemplate: '{sHoRt_sHa}',
         expectedArtifacts: '34',
         tauriContext: path.join(__dirname, 'test-files'),
+        releaseId: '',
       },
       booleanInputs: {
         draft: false,
@@ -202,8 +208,8 @@ describe('run', () => {
     expect(runMock).toHaveReturned()
 
     // Create release called correctly
-    expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(1)
-    expect(getOrCreateGitHubReleaseMock).toHaveBeenNthCalledWith(1, {
+    expect(getReleaseByTagOrCreateMock).toHaveBeenCalledTimes(1)
+    expect(getReleaseByTagOrCreateMock).toHaveBeenNthCalledWith(1, {
       githubToken: THE_GITHUB_TOKEN,
       repo: THE_GITHUB_REPO,
       owner: THE_GITHUB_OWNER,
@@ -266,12 +272,14 @@ describe('run', () => {
       inputs: {
         buildOptions: '',
         expectedArtifacts: '1',
+        tagTemplate: 'v{VERSION}',
       },
     },
     {
       inputs: {
         buildOptions: '--bundles app,dmg,updater',
         expectedArtifacts: '1',
+        tagTemplate: 'v{VERSION}',
       },
     },
   ]
@@ -287,7 +295,7 @@ describe('run', () => {
     expect(runMock).toHaveReturned()
 
     // Core logic
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
     expect(uploadAppToGithubMock).not.toHaveBeenCalled()
 
@@ -345,7 +353,7 @@ describe('run', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, expectedError)
 
     // Core function not called
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
   })
 
@@ -359,6 +367,8 @@ describe('run', () => {
           return '1'
         case 'buildOptions':
           return '--target universal-apple-darwin'
+        case 'tagTemplate':
+          return 'v{VERSION}'
         default:
           return ''
       }
@@ -372,7 +382,7 @@ describe('run', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, expect.stringMatching(/^Cannot read or parse toml file/))
 
     // Core function not called
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
   })
 
@@ -385,6 +395,8 @@ describe('run', () => {
           return '1'
         case 'buildOptions':
           return '' // Build options is not required when skipping build
+        case 'tagTemplate':
+          return 'v{VERSION}'
         default:
           return ''
       }
@@ -403,7 +415,7 @@ describe('run', () => {
     expect(runMock).toHaveReturned()
 
     // Only release creation must have been called
-    expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(1)
+    expect(getReleaseByTagOrCreateMock).toHaveBeenCalledTimes(1)
     expect(buildSpied).not.toHaveBeenCalled()
     expect(uploadAppToGithubMock).not.toHaveBeenCalled()
 
@@ -418,7 +430,7 @@ describe('run', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
 
     // Core function not called
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
   })
 
@@ -431,7 +443,7 @@ describe('run', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_REPOSITORY is required')
 
     // Core function not called
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
   })
 
@@ -455,7 +467,7 @@ describe('run', () => {
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_SHA is required')
 
     // Core function not called
-    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(getReleaseByTagOrCreateMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
   })
 })
