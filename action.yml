@@ -20,7 +20,7 @@ inputs:
   tagTemplate:
     description:
       '(optional and mutually exclusive with "releaseId", action will fail if both are set) Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in
-      "src-tauri/Cargo.toml".'
+      "src-tauri/Cargo.toml"; and "SHORT_SHA" with the shot github sha in the current commit.'
     required: false
   releaseId:
     description:
