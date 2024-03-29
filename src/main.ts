@@ -7,11 +7,12 @@ import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
 import { uploadAppToGithub } from './lib/tauri-utils/tauri-github-uploader'
 import { VERSION } from './version'
 
-export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft' | 'skipBuild'
+export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate'
+export type ActionBooleanInputs = 'prerelease' | 'draft' | 'skipBuild'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag' | 'releaseId'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
-const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
+const booleanInput = (name: ActionBooleanInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 const output = (name: ActionOutputs, value: string): void => core.setOutput(name, value)
 
 /**
