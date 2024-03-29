@@ -30,9 +30,11 @@ inputs:
   prerelease:
     description: 'If the GitHub release to create should be marked as prerelease. Ignored if "releaseId" is used, as the release already exists.'
     required: false
+    default: 'true'
   draft:
     description: 'If the GitHub release to create should be marked as draft. Ignored if "releaseId" is used, as the release already exists.'
     required: false
+    default: 'true'
   skipBuild:
     description:
       'If set to "true", the app will not be built, and you must specify "tagTemplate" (otherwise the app will fail). When skipping build, only the GitHub release will be created. If set to "false", it is highly advisable that you use a
