@@ -368,6 +368,7 @@ describe('run', () => {
           return ''
       }
     })
+    getBooleanInputMock.mockReturnValue(false)
 
     setAllValidRequiredEnvVars()
     await main.run()
@@ -381,12 +382,8 @@ describe('run', () => {
   })
 
   it('called with no GITHUB_TOKEN must fail', async () => {
-    getInputMock.mockImplementation(name => {
-      switch (name as ActionInputs) {
-        default:
-          return ''
-      }
-    })
+    getInputMock.mockReturnValue('')
+    getBooleanInputMock.mockReturnValue(false)
     await main.run()
     expect(runMock).toHaveReturned()
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'GITHUB_TOKEN is required')
@@ -397,12 +394,8 @@ describe('run', () => {
   })
 
   it('called with no GITHUB_REPOSITORY must fail', async () => {
-    getInputMock.mockImplementation(name => {
-      switch (name as ActionInputs) {
-        default:
-          return ''
-      }
-    })
+    getInputMock.mockReturnValue('')
+    getBooleanInputMock.mockReturnValue(false)
     test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
     await main.run()
     expect(runMock).toHaveReturned()
@@ -414,12 +407,8 @@ describe('run', () => {
   })
 
   it('called with invalid GITHUB_REPOSITORY must fail', async () => {
-    getInputMock.mockImplementation(name => {
-      switch (name as ActionInputs) {
-        default:
-          return ''
-      }
-    })
+    getInputMock.mockReturnValue('')
+    getBooleanInputMock.mockReturnValue(false)
     test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
     test_setEnvVar('GITHUB_REPOSITORY', 'invalid')
     await main.run()
@@ -428,12 +417,8 @@ describe('run', () => {
   })
 
   it('called with no GITHUB_SHA must fail', async () => {
-    getInputMock.mockImplementation(name => {
-      switch (name as ActionInputs) {
-        default:
-          return ''
-      }
-    })
+    getInputMock.mockReturnValue('')
+    getBooleanInputMock.mockReturnValue(false)
     test_setEnvVar('GITHUB_TOKEN', THE_GITHUB_TOKEN)
     test_setEnvVar('GITHUB_REPOSITORY', THE_GITHUB_REPOSITORY)
     await main.run()
