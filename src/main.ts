@@ -82,6 +82,12 @@ export async function run(): Promise<void> {
       )
     }
 
+    // TODO: Test this
+    if (skipBuild && !tagTemplate) {
+      core.setFailed('When you set "skipBuild" to true, you must specify "tagTemplate" as well.')
+      return
+    }
+
     // Validate amount of artifacts
     const invalidExpectedArtifacts = isNaN(+expectedArtifactsStr) || +expectedArtifactsStr <= 0
     if (!skipBuild && invalidExpectedArtifacts) {
