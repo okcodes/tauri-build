@@ -261,7 +261,6 @@ describe('run', () => {
     inputs: Partial<Record<ActionInputs, string>>
   }
 
-  // TODO: Test that build options can contain empty string if skip build is true.
   const failedTestCase: FailedTestCase[] = [
     {
       inputs: {
@@ -287,20 +286,16 @@ describe('run', () => {
     expect(runMock).toHaveBeenCalledTimes(1)
     expect(runMock).toHaveReturned()
 
-    // Create release called correctly
-    expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(0)
+    // Core logic
+    expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
+    expect(buildSpied).not.toHaveBeenCalled()
+    expect(uploadAppToGithubMock).not.toHaveBeenCalled()
 
-    // Build called correctly
-    expect(buildSpied).toHaveBeenCalledTimes(0)
+    // Utility commands
+    expect(executeCommandMock).not.toHaveBeenCalled()
 
-    expect(uploadAppToGithubMock).toHaveBeenCalledTimes(0)
-
-    // Utility commands called correctly
-    expect(executeCommandMock).toHaveBeenCalledTimes(0)
-
-    // Verify that all the core library functions were called correctly
-    expect(setOutputMock).toHaveBeenCalledTimes(0)
-
+    // Core library functions
+    expect(setOutputMock).not.toHaveBeenCalled()
     expect(setFailedMock).toHaveBeenCalledTimes(1)
     expect(setFailedMock).toHaveBeenNthCalledWith(1, 'The buildOptions must contain a flag --target (or -t) specifying the rust target triple to build')
     expect(errorMock).not.toHaveBeenCalled()
@@ -354,7 +349,7 @@ describe('run', () => {
     expect(buildSpied).not.toHaveBeenCalled()
   })
 
-  it('called with invalid "tauriContext" data must fail', async () => {
+  it('called with invalid "tauriContext" directory must fail', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {
@@ -379,6 +374,40 @@ describe('run', () => {
     // Core function not called
     expect(getOrCreateGitHubReleaseMock).not.toHaveBeenCalled()
     expect(buildSpied).not.toHaveBeenCalled()
+  })
+
+  it('called with empty build options when skipBuild is true must succeed', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name as ActionInputs) {
+        case 'tauriContext':
+          return path.join(__dirname, 'test-files')
+        case 'expectedArtifacts':
+          return '1'
+        case 'buildOptions':
+          return '' // Build options is not required when skipping build
+        default:
+          return ''
+      }
+    })
+    getBooleanInputMock.mockImplementation(name => {
+      switch (name as ActionBooleanInputs) {
+        case 'skipBuild':
+          return true
+        default:
+          return false
+      }
+    })
+
+    setAllValidRequiredEnvVars()
+    await main.run()
+    expect(runMock).toHaveReturned()
+
+    // Only release creation must have been called
+    expect(getOrCreateGitHubReleaseMock).toHaveBeenCalledTimes(1)
+    expect(buildSpied).not.toHaveBeenCalled()
+    expect(uploadAppToGithubMock).not.toHaveBeenCalled()
+
+    expect(setFailedMock).not.toHaveBeenCalled()
   })
 
   it('called with no GITHUB_TOKEN must fail', async () => {
