@@ -59,6 +59,7 @@ export async function run(): Promise<void> {
 
     // Validate tagTemplate and releaseId
 
+    // TODO: Test these failed calls
     if (tagTemplate && releaseIdStr) {
       core.setFailed('You must provide only one either "releaseId" or "tagTemplate" but not both.')
       return
@@ -72,6 +73,13 @@ export async function run(): Promise<void> {
     if (releaseIdStr && isNaN(+releaseIdStr)) {
       core.setFailed('When you provide "releaseId", it must be a number.')
       return
+    }
+
+    // TODO: Test this
+    if (!skipBuild && !releaseIdStr) {
+      core.warning(
+        'IMPORTANT: You should consider using a release ID when building the app to prevent creating duplicated (draft) releases where you might end up with incomplete built artifacts when running jobs on matrices, see why: https://github.com/okcodes/tauri-build/issues/9'
+      )
     }
 
     // Validate amount of artifacts
@@ -100,6 +108,7 @@ export async function run(): Promise<void> {
     } = releaseIdStr
       ? await getReleaseById({ owner, repo, id: +releaseIdStr, githubToken: GITHUB_TOKEN })
       : await getReleaseByTagOrCreate({ githubToken: GITHUB_TOKEN, repo, owner, tag: tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA }), sha: GITHUB_SHA, prerelease, draft })
+    // TODO: Test these above
 
     // Set app meta outputs
     output('appName', appName)

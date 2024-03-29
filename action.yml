@@ -34,7 +34,7 @@ inputs:
     description: 'If the GitHub release to create should be marked as draft.'
     required: true
   skipBuild:
-    description: 'If set to "true", the app will not be built, and only the GitHub release will be created. This is useful if you build the app using a matrix, where there is the possibility of creating the same release multiple times.'
+    description: 'If set to "true", the app will not be built, and only the GitHub release will be created. It is highly advisable that if this is false, you use a "releaseId", see why: https://github.com/okcodes/tauri-build/issues/9'
     required: true
     default: 'false'
 
