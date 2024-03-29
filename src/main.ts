@@ -78,7 +78,7 @@ export async function run(): Promise<void> {
     // TODO: Test this
     if (!skipBuild && !releaseIdStr) {
       core.warning(
-        'IMPORTANT: You should consider using a release ID when building the app to prevent creating duplicated (draft) releases where you might end up with incomplete built artifacts when running jobs on matrices, see why: https://github.com/okcodes/tauri-build/issues/9'
+        'IMPORTANT: You should consider using the "releaseId" input when "skipBuild" is `false` to prevent creating duplicated (draft) releases which means ending up with incomplete built artifacts when running jobs on matrices, see why: https://github.com/okcodes/tauri-build/issues/9'
       )
     }
 
