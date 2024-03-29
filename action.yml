@@ -18,16 +18,27 @@ inputs:
     description: (required if "skipBuild" is "false") The expected number of app files to find after the build. The action fails if this number is not met.
     required: false
   tagTemplate:
-    description: 'Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in "src-tauri/Cargo.toml".'
-    required: true
+    description:
+      '(optional and mutually exclusive with "releaseId", action will fail if both are set) Template to generate the tag name of the release. It will interpolate "{NAME}" and "{VERSION}" with the app name and version defined in
+      "src-tauri/Cargo.toml"; and "SHORT_SHA" with the shot github sha in the current commit.'
+    required: false
+  releaseId:
+    description:
+      '(optional and mutually exclusive with "tagTemplate", action will fail if both are set) If you know in advance the ID of the release where to upload the app. It is highly recommendable that if "skipBuild" is false, you use this field,
+      see why: https://github.com/okcodes/tauri-build/issues/9'
+    required: false
   prerelease:
-    description: 'If the GitHub release to create should be marked as prerelease.'
-    required: true
+    description: 'If the GitHub release to create should be marked as prerelease. Ignored if "releaseId" is used, as the release already exists.'
+    required: false
+    default: 'true'
   draft:
-    description: 'If the GitHub release to create should be marked as draft.'
-    required: true
+    description: 'If the GitHub release to create should be marked as draft. Ignored if "releaseId" is used, as the release already exists.'
+    required: false
+    default: 'true'
   skipBuild:
-    description: 'If set to "true", the app will not be built, and only the GitHub release will be created. This is useful if you build the app using a matrix, where there is the possibility of creating the same release multiple times.'
+    description:
+      'If set to "true", the app will not be built, and you must specify "tagTemplate" (otherwise the app will fail). When skipping build, only the GitHub release will be created. If set to "false", it is highly advisable that you use a
+      "releaseId" and do not provide "tagTemplate", see why: https://github.com/okcodes/tauri-build/issues/9'
     required: true
     default: 'false'
 

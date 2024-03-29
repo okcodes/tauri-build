@@ -33311,7 +33311,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getOrCreateGitHubRelease = void 0;
+exports.getReleaseById = exports.getReleaseByTagOrCreate = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
@@ -33319,9 +33319,9 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
     let hasNextPage = true;
     while (hasNextPage) {
         const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page });
-        const foundRelease = releases.data.find(_ => _.tag_name === tag);
-        if (foundRelease) {
-            return { uploadUrl: foundRelease.upload_url, releaseId: foundRelease.id };
+        const matchingReleases = releases.data.filter(_ => _.tag_name === tag);
+        if (matchingReleases[0]) {
+            return { uploadUrl: matchingReleases[0].upload_url, id: matchingReleases[0].id, tag: matchingReleases[0].tag_name };
         }
         hasNextPage = releases.headers?.link?.includes('rel="next"') || false;
         if (hasNextPage) {
@@ -33330,12 +33330,12 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
     }
     throw { status: 404 };
 };
-const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
+const getReleaseByTagOrCreate = async ({ githubToken, repo, owner, tag, sha, prerelease, draft }) => {
     const octokit = new rest_1.Octokit({ auth: githubToken });
     core.startGroup('GET OR CREATE RELEASE');
     try {
         // First try to get release by tag. If not found, create it.
-        console.log(`Will get existing release with tag "${tag}"`, { owner, repo, tag });
+        console.log(`Will get release with tag "${tag}"`, { owner, repo, tag, draft });
         if (draft) {
             // Draft releases cannot be retrieved directly.
             const release = await getDraftReleaseByTag({ tag, repo, octokit, owner });
@@ -33345,13 +33345,13 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
         else {
             const release = await octokit.repos.getReleaseByTag({ owner, repo, tag });
             console.log(`Did get existing non-draft release with tag "${tag}".`, { owner, repo, tag, release: release.data });
-            return { uploadUrl: release.data.upload_url, releaseId: release.data.id };
+            return { uploadUrl: release.data.upload_url, id: release.data.id, tag: release.data.tag_name };
         }
     }
     catch (error) {
         // If error is not 404, it's an unknown error.
         if (error.status !== 404) {
-            console.error('Unexpected error getting release by tag', { owner, repo, tag, error });
+            console.error('Unexpected error getting release by tag', { owner, repo, tag }, error);
             throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${error.message}`, { cause: error });
         }
         // Release not found, create it.
@@ -33367,13 +33367,25 @@ const getOrCreateGitHubRelease = async ({ githubToken, repo, owner, tag, sha, pr
             prerelease,
         });
         console.log(`Did create release with tag "${tag}"`, { owner, repo, tag, sha, draft, prerelease, release: createReleaseResponse.data });
-        return { uploadUrl: createReleaseResponse.data.upload_url, releaseId: createReleaseResponse.data.id };
+        return { uploadUrl: createReleaseResponse.data.upload_url, id: createReleaseResponse.data.id, tag: createReleaseResponse.data.tag_name };
     }
     finally {
         core.endGroup();
     }
 };
-exports.getOrCreateGitHubRelease = getOrCreateGitHubRelease;
+exports.getReleaseByTagOrCreate = getReleaseByTagOrCreate;
+const getReleaseById = async ({ githubToken, repo, owner, id }) => {
+    try {
+        const octokit = new rest_1.Octokit({ auth: githubToken });
+        const release = await octokit.repos.getRelease({ release_id: id, owner, repo });
+        return { uploadUrl: release.data.upload_url, id: release.data.id, tag: release.data.tag_name };
+    }
+    catch (error) {
+        console.error('Cannot get release by ID', { owner, repo, id }, error);
+        throw new Error(`Cannot get ID with ID "${id}": ${error.message}`, { cause: error });
+    }
+};
+exports.getReleaseById = getReleaseById;
 
 
 /***/ }),
@@ -33892,10 +33904,34 @@ async function run() {
         const tauriContext = input('tauriContext', { required: true, trimWhitespace: true });
         const buildOptions = input('buildOptions', { required: false, trimWhitespace: true });
         const expectedArtifactsStr = input('expectedArtifacts', { required: false, trimWhitespace: true });
-        const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true });
-        const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true });
-        const draft = booleanInput('draft', { required: true, trimWhitespace: true });
+        const tagTemplate = input('tagTemplate', { required: false, trimWhitespace: true });
+        const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true });
+        const prerelease = booleanInput('prerelease', { required: false, trimWhitespace: true });
+        const draft = booleanInput('draft', { required: false, trimWhitespace: true });
         const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true });
+        // Validate tagTemplate and releaseId
+        // TODO: Test these failed calls
+        if (tagTemplate && releaseIdStr) {
+            core.setFailed('You must provide only one either "releaseId" or "tagTemplate" but not both.');
+            return;
+        }
+        if (!tagTemplate && !releaseIdStr) {
+            core.setFailed('You must provide either "releaseId" or "tagTemplate".');
+            return;
+        }
+        if (releaseIdStr && isNaN(+releaseIdStr)) {
+            core.setFailed('When you provide "releaseId", it must be a number.');
+            return;
+        }
+        // TODO: Test this
+        if (!skipBuild && !releaseIdStr) {
+            core.warning('IMPORTANT: You should consider using the "releaseId" input when "skipBuild" is `false` to prevent creating duplicated (draft) releases which means ending up with incomplete built artifacts when running jobs on matrices, see why: https://github.com/okcodes/tauri-build/issues/9');
+        }
+        // TODO: Test this
+        if (skipBuild && !tagTemplate) {
+            core.setFailed('When you set "skipBuild" to true, you must specify "tagTemplate" as well.');
+            return;
+        }
         // Validate amount of artifacts
         const invalidExpectedArtifacts = isNaN(+expectedArtifactsStr) || +expectedArtifactsStr <= 0;
         if (!skipBuild && invalidExpectedArtifacts) {
@@ -33911,14 +33947,16 @@ async function run() {
         console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY });
         const appInfo = await (0, get_rust_app_info_1.parseTauriCargoTomlFileInContext)(tauriContext);
         const { name: appName, version: appVersion } = appInfo.package;
-        const tag = (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA });
         // Create release if it does not exist
-        const { uploadUrl, releaseId } = await (0, github_release_1.getOrCreateGitHubRelease)({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft });
+        const { uploadUrl, id: retrievedReleaseId, tag, } = releaseIdStr
+            ? await (0, github_release_1.getReleaseById)({ owner, repo, id: +releaseIdStr, githubToken: GITHUB_TOKEN })
+            : await (0, github_release_1.getReleaseByTagOrCreate)({ githubToken: GITHUB_TOKEN, repo, owner, tag: (0, tag_template_1.tagNameFromTemplate)(tagTemplate, { appInfo, gitSha: GITHUB_SHA }), sha: GITHUB_SHA, prerelease, draft });
+        // TODO: Test these above
         // Set app meta outputs
         output('appName', appName);
         output('appVersion', appVersion);
         output('tag', tag);
-        output('releaseId', String(releaseId));
+        output('releaseId', String(retrievedReleaseId));
         if (skipBuild) {
             return;
         }

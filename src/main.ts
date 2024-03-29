@@ -3,15 +3,16 @@ import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
 import { build, targetFromBuildOptions } from './lib/tauri-utils/tauri-builder'
 import { parseTauriCargoTomlFileInContext } from './lib/rust-utils/get-rust-app-info'
 import { tagNameFromTemplate } from './lib/github-utils/tag-template'
-import { getOrCreateGitHubRelease } from './lib/github-utils/github-release'
+import { getReleaseById, getReleaseByTagOrCreate } from './lib/github-utils/github-release'
 import { uploadAppToGithub } from './lib/tauri-utils/tauri-github-uploader'
 import { VERSION } from './version'
 
-export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'prerelease' | 'draft' | 'skipBuild'
+export type ActionInputs = 'tauriContext' | 'buildOptions' | 'expectedArtifacts' | 'tagTemplate' | 'releaseId'
+export type ActionBooleanInputs = 'prerelease' | 'draft' | 'skipBuild'
 export type ActionOutputs = 'appName' | 'appVersion' | 'tag' | 'releaseId'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
-const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
+const booleanInput = (name: ActionBooleanInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 const output = (name: ActionOutputs, value: string): void => core.setOutput(name, value)
 
 /**
@@ -50,10 +51,42 @@ export async function run(): Promise<void> {
     const tauriContext = input('tauriContext', { required: true, trimWhitespace: true })
     const buildOptions = input('buildOptions', { required: false, trimWhitespace: true })
     const expectedArtifactsStr = input('expectedArtifacts', { required: false, trimWhitespace: true })
-    const tagTemplate = input('tagTemplate', { required: true, trimWhitespace: true })
-    const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
-    const draft = booleanInput('draft', { required: true, trimWhitespace: true })
+    const tagTemplate = input('tagTemplate', { required: false, trimWhitespace: true })
+    const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true })
+    const prerelease = booleanInput('prerelease', { required: false, trimWhitespace: true })
+    const draft = booleanInput('draft', { required: false, trimWhitespace: true })
     const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true })
+
+    // Validate tagTemplate and releaseId
+
+    // TODO: Test these failed calls
+    if (tagTemplate && releaseIdStr) {
+      core.setFailed('You must provide only one either "releaseId" or "tagTemplate" but not both.')
+      return
+    }
+
+    if (!tagTemplate && !releaseIdStr) {
+      core.setFailed('You must provide either "releaseId" or "tagTemplate".')
+      return
+    }
+
+    if (releaseIdStr && isNaN(+releaseIdStr)) {
+      core.setFailed('When you provide "releaseId", it must be a number.')
+      return
+    }
+
+    // TODO: Test this
+    if (!skipBuild && !releaseIdStr) {
+      core.warning(
+        'IMPORTANT: You should consider using the "releaseId" input when "skipBuild" is `false` to prevent creating duplicated (draft) releases which means ending up with incomplete built artifacts when running jobs on matrices, see why: https://github.com/okcodes/tauri-build/issues/9'
+      )
+    }
+
+    // TODO: Test this
+    if (skipBuild && !tagTemplate) {
+      core.setFailed('When you set "skipBuild" to true, you must specify "tagTemplate" as well.')
+      return
+    }
 
     // Validate amount of artifacts
     const invalidExpectedArtifacts = isNaN(+expectedArtifactsStr) || +expectedArtifactsStr <= 0
@@ -72,16 +105,22 @@ export async function run(): Promise<void> {
     console.log('Action called with:', { owner, repo, GITHUB_SHA, GITHUB_REPOSITORY })
     const appInfo = await parseTauriCargoTomlFileInContext(tauriContext)
     const { name: appName, version: appVersion } = appInfo.package
-    const tag = tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA })
 
     // Create release if it does not exist
-    const { uploadUrl, releaseId } = await getOrCreateGitHubRelease({ githubToken: GITHUB_TOKEN, repo, owner, tag, sha: GITHUB_SHA, prerelease, draft })
+    const {
+      uploadUrl,
+      id: retrievedReleaseId,
+      tag,
+    } = releaseIdStr
+      ? await getReleaseById({ owner, repo, id: +releaseIdStr, githubToken: GITHUB_TOKEN })
+      : await getReleaseByTagOrCreate({ githubToken: GITHUB_TOKEN, repo, owner, tag: tagNameFromTemplate(tagTemplate, { appInfo, gitSha: GITHUB_SHA }), sha: GITHUB_SHA, prerelease, draft })
+    // TODO: Test these above
 
     // Set app meta outputs
     output('appName', appName)
     output('appVersion', appVersion)
     output('tag', tag)
-    output('releaseId', String(releaseId))
+    output('releaseId', String(retrievedReleaseId))
 
     if (skipBuild) {
       return
