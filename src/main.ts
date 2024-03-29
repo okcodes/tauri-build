@@ -53,8 +53,8 @@ export async function run(): Promise<void> {
     const expectedArtifactsStr = input('expectedArtifacts', { required: false, trimWhitespace: true })
     const tagTemplate = input('tagTemplate', { required: false, trimWhitespace: true })
     const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true })
-    const prerelease = booleanInput('prerelease', { required: true, trimWhitespace: true })
-    const draft = booleanInput('draft', { required: true, trimWhitespace: true })
+    const prerelease = booleanInput('prerelease', { required: false, trimWhitespace: true })
+    const draft = booleanInput('draft', { required: false, trimWhitespace: true })
     const skipBuild = booleanInput('skipBuild', { required: false, trimWhitespace: true })
 
     // Validate tagTemplate and releaseId
