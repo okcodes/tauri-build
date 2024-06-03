@@ -73,7 +73,7 @@
     "@octokit/rest": "^20.1.0",
     "axios": "^1.6.8",
     "execa": "^8.0.1",
-    "glob": "^10.3.12",
+    "glob": "^10.4.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
